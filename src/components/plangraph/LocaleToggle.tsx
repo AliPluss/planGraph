@@ -26,6 +26,7 @@ export default function LocaleToggle() {
 
   const handleChange = (code: string) => {
     i18n.changeLanguage(code);
+    localStorage.setItem('i18nextLng', code);
     document.documentElement.setAttribute('lang', code);
     document.documentElement.setAttribute('dir', code === 'ar' ? 'rtl' : 'ltr');
   };
