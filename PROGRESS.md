@@ -68,6 +68,21 @@
   - 18/18 tests still pass; `npm run build` succeeds
 - **Notes:** `useSearchParams` wrapped in Suspense as required by Next.js 16. Skip button passes explicit answers to avoid stale closure.
 
+## Session 7 — Templates library
+- **Completed:** 2026-04-25T19:00:00Z
+- **Files added/modified:** 9
+- **Key outcomes:**
+  - `src/core/templates/types.ts` — `StepBlueprint` and `Template` interfaces
+  - `src/core/templates/library/nextjs-saas.ts` — 8 base + 4 conditional steps (web-app)
+  - `src/core/templates/library/browser-extension.ts` — 8 base + 2 conditional steps
+  - `src/core/templates/library/rest-api.ts` — 8 base + 3 conditional steps
+  - `src/core/templates/library/cli-tool.ts` — 8 base + 0 conditional steps
+  - `src/core/templates/library/telegram-bot.ts` — 8 base + 3 conditional steps
+  - `src/core/templates/library/landing-page.ts` — 8 base + 4 conditional steps
+  - `src/core/templates/registry.ts` — `getTemplate`, `getTemplateForKind`, `listTemplates`
+  - `src/core/templates/__tests__/templates.test.ts` — 72 template tests (all pass); total 90/90
+- **Notes:** All text fields bilingual EN+AR. All libraries are real, maintained packages. Pure data — no file I/O.
+
 ## Session 5 — Onboarding flow
 - **Completed:** 2026-04-25T18:00:00Z
 - **Files added/modified:** 7
