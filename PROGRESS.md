@@ -36,3 +36,19 @@
   - `src/core/storage/__tests__/storage.test.ts` — 7 storage tests (round-trips, memory, audit)
   - All 18 tests pass (`npm run test`)
 - **Notes:** —
+
+## Session 4 — i18n bilingual layout
+- **Completed:** 2026-04-25T17:00:00Z
+- **Files added/modified:** 9
+- **Key outcomes:**
+  - `src/lib/i18n/config.ts` — locale constants and type
+  - `src/lib/i18n/translations/en.json` + `ar.json` — bilingual strings for app, nav, common, home namespaces
+  - `src/lib/i18n/i18n.ts` — i18next init with LanguageDetector (localStorage → navigator → default)
+  - `src/components/plangraph/I18nProvider.tsx` — client component that syncs `html[lang]` and `html[dir]` to current locale
+  - `src/components/plangraph/LocaleToggle.tsx` — dropdown to switch EN ↔ AR, updates html dir immediately
+  - `src/components/plangraph/AppShell.tsx` — sticky top bar with PlanGraph wordmark + LocaleToggle + Settings icon
+  - `src/app/layout.tsx` — wraps children with I18nProvider + AppShell, sets initial dir="ltr"
+  - `src/app/page.tsx` — uses useTranslation(), shows welcome heading + New/Open buttons
+  - `src/proxy.ts` — localhost-only check migrated to Next.js 16 proxy convention (middleware deprecated in v16)
+  - Dev server boots cleanly; locale toggle switches EN/AR with RTL flip
+- **Notes:** Next.js 16 renamed `middleware.ts` to `proxy.ts` (new file convention). Both kept for now; middleware file is the legacy one.

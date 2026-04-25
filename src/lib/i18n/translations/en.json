@@ -1,0 +1,24 @@
+{
+  "app": {
+    "name": "PlanGraph",
+    "tagline": "Your project planning companion"
+  },
+  "nav": {
+    "home": "Home",
+    "projects": "Projects",
+    "settings": "Settings"
+  },
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading..."
+  },
+  "home": {
+    "welcome": "Welcome to PlanGraph",
+    "newProject": "New Project",
+    "openProject": "Open Project"
+  }
+}

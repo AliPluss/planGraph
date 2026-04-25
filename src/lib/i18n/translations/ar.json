@@ -1,0 +1,24 @@
+{
+  "app": {
+    "name": "PlanGraph",
+    "tagline": "رفيقك في تخطيط المشاريع"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "projects": "المشاريع",
+    "settings": "الإعدادات"
+  },
+  "common": {
+    "next": "التالي",
+    "back": "السابق",
+    "skip": "تخطي",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "loading": "جارٍ التحميل..."
+  },
+  "home": {
+    "welcome": "مرحباً بك في PlanGraph",
+    "newProject": "مشروع جديد",
+    "openProject": "فتح مشروع"
+  }
+}
