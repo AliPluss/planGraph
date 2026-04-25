@@ -21,6 +21,43 @@
     "newProject": "New Project",
     "openProject": "Open Project"
   },
+  "discovery": {
+    "title": "Discover your project",
+    "subtitle": "Answer a few questions so we can build the right plan for you.",
+    "ideaPlaceholder": "Describe your project idea...",
+    "startButton": "Start discovery",
+    "round": "Round {{current}} of ~{{total}}",
+    "submitAnswer": "Submit answer",
+    "back": "Edit previous answers",
+    "skip": "Skip this question",
+    "summary": {
+      "title": "Your project scope",
+      "kind": "Project type",
+      "features": "Included in MVP",
+      "exclusions": "Deferred (not in MVP)",
+      "stack": "Tentative stack",
+      "steps": "Estimated steps",
+      "hours": "Estimated hours",
+      "generatePlan": "Generate Plan",
+      "editAnswers": "Edit answers"
+    },
+    "noFeatures": "No specific features detected",
+    "noExclusions": "Nothing deferred",
+    "kindLabels": {
+      "web-app": "Web App",
+      "mobile-app": "Mobile App",
+      "browser-extension": "Browser Extension",
+      "rest-api": "REST API",
+      "cli-tool": "CLI Tool",
+      "discord-bot": "Discord Bot",
+      "telegram-bot": "Telegram Bot",
+      "landing-page": "Landing Page",
+      "3d-web": "3D Web",
+      "n8n-workflow": "n8n Workflow",
+      "ai-agent": "AI Agent",
+      "unknown": "Custom"
+    }
+  },
   "onboarding": {
     "title": "Set up your profile",
     "subtitle": "Help us tailor the experience to you. Takes about 1 minute.",

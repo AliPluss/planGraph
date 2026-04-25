@@ -38,7 +38,7 @@ export default function Home() {
       <p className="text-muted-foreground text-lg mb-8">{t('app.tagline')}</p>
       <div className="flex gap-4 flex-wrap justify-center">
         <Link
-          href="/onboarding"
+          href="/discovery"
           prefetch={false}
           className="inline-flex items-center justify-center rounded-lg bg-primary px-5 h-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >

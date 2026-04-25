@@ -53,6 +53,21 @@
   - Dev server boots cleanly; locale toggle switches EN/AR with RTL flip
 - **Notes:** Next.js 16 renamed `middleware.ts` to `proxy.ts` (new file convention). Both kept for now; middleware file is the legacy one.
 
+## Session 6 — Idea Discovery Dialog
+- **Completed:** 2026-04-25T18:30:00Z
+- **Files added/modified:** 9
+- **Key outcomes:**
+  - `src/core/discovery/types.ts` — `ProjectKind`, `Question`, `ScopeSummary` types
+  - `src/core/discovery/keyword-detector.ts` — `detectKind()` with EN+AR keyword maps for all 11 project types
+  - `src/core/discovery/question-bank.ts` — 4 common questions + per-kind question sets (3–4 questions each) with full EN+AR translations
+  - `src/core/discovery/rules-engine.ts` — `DiscoveryEngine` class: batched questioning (3 per round), answer tracking, back navigation, deterministic `buildSummary()` that derives features, stack, exclusions, and estimates
+  - `src/app/api/discovery/route.ts` — POST `start` and POST `step` handlers; in-memory session store keyed by UUID
+  - `src/app/discovery/page.tsx` — 3-phase client UI (idea entry → Q&A rounds → scope summary); Suspense-wrapped for `useSearchParams`; RTL-aware; back navigation through question history
+  - `src/lib/i18n/translations/en.json` + `ar.json` — `discovery.*` namespace added
+  - `src/app/page.tsx` — "New Project" now routes to `/discovery`
+  - 18/18 tests still pass; `npm run build` succeeds
+- **Notes:** `useSearchParams` wrapped in Suspense as required by Next.js 16. Skip button passes explicit answers to avoid stale closure.
+
 ## Session 5 — Onboarding flow
 - **Completed:** 2026-04-25T18:00:00Z
 - **Files added/modified:** 7

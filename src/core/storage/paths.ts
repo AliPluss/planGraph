@@ -1,5 +1,5 @@
 import * as path from "path";
-import { pathGuard } from "../security/path-guard.js";
+import { pathGuard } from "../security/path-guard";
 
 function repoRoot(): string {
   // Walk up from __dirname to find the project root (where package.json lives)

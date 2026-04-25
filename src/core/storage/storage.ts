@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import { SafeWriter } from "../security/safe-writer.js";
-import type { UserProfile, Project, ProjectMeta, MemoryEntry, AuditEntry } from "../types.js";
+import { SafeWriter } from "../security/safe-writer";
+import type { UserProfile, Project, ProjectMeta, MemoryEntry, AuditEntry } from "../types";
 import {
   getProfilePath,
   getProjectsDir,
@@ -11,7 +11,7 @@ import {
   getStepFile,
   getAuditFile,
   getWorkspaceRoot,
-} from "./paths.js";
+} from "./paths";
 
 export class Storage {
   private writer: SafeWriter;

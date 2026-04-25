@@ -21,6 +21,43 @@
     "newProject": "مشروع جديد",
     "openProject": "فتح مشروع"
   },
+  "discovery": {
+    "title": "اكتشف مشروعك",
+    "subtitle": "أجب على بعض الأسئلة حتى نتمكن من بناء الخطة المناسبة لك.",
+    "ideaPlaceholder": "صف فكرة مشروعك...",
+    "startButton": "ابدأ الاستكشاف",
+    "round": "الجولة {{current}} من ~{{total}}",
+    "submitAnswer": "إرسال الإجابة",
+    "back": "تعديل الإجابات السابقة",
+    "skip": "تخطي هذا السؤال",
+    "summary": {
+      "title": "نطاق مشروعك",
+      "kind": "نوع المشروع",
+      "features": "مضمّن في النسخة الأولى",
+      "exclusions": "مؤجّل (غير مضمّن)",
+      "stack": "التقنيات المقترحة",
+      "steps": "الخطوات المتوقعة",
+      "hours": "الساعات المتوقعة",
+      "generatePlan": "توليد الخطة",
+      "editAnswers": "تعديل الإجابات"
+    },
+    "noFeatures": "لم يتم اكتشاف ميزات محددة",
+    "noExclusions": "لا شيء مؤجّل",
+    "kindLabels": {
+      "web-app": "تطبيق ويب",
+      "mobile-app": "تطبيق جوال",
+      "browser-extension": "إضافة متصفح",
+      "rest-api": "REST API",
+      "cli-tool": "أداة سطر أوامر",
+      "discord-bot": "بوت ديسكورد",
+      "telegram-bot": "بوت تيليجرام",
+      "landing-page": "صفحة هبوط",
+      "3d-web": "ويب ثلاثي الأبعاد",
+      "n8n-workflow": "سير عمل n8n",
+      "ai-agent": "وكيل ذكاء اصطناعي",
+      "unknown": "مخصص"
+    }
+  },
   "onboarding": {
     "title": "إعداد ملفك الشخصي",
     "subtitle": "ساعدنا في تخصيص التجربة لك. يستغرق نحو دقيقة واحدة.",
