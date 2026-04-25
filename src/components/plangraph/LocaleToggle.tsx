@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
@@ -7,17 +8,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { Languages } from 'lucide-react';
 
 const LOCALES = [
-  { code: 'en', label: 'English', native: 'English' },
-  { code: 'ar', label: 'Arabic', native: 'العربية' },
+  { code: 'en', native: 'English' },
+  { code: 'ar', native: 'العربية' },
 ];
 
 export default function LocaleToggle() {
   const { i18n } = useTranslation();
-  const current = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Always 'en' on server to match SSR; real value after mount
+  const current = mounted ? (i18n.language?.startsWith('ar') ? 'ar' : 'en') : 'en';
 
   const handleChange = (code: string) => {
     i18n.changeLanguage(code);
