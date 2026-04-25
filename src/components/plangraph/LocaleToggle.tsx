@@ -32,11 +32,9 @@ export default function LocaleToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Languages className="h-4 w-4" />
-          <span className="uppercase text-xs font-medium">{current}</span>
-        </button>
+      <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Languages className="h-4 w-4" />
+        <span className="uppercase text-xs font-medium">{current}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {LOCALES.map((locale) => (
