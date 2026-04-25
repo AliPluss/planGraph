@@ -25,3 +25,14 @@
   - `docs/SECURITY.md` — threat model documentation
   - All 11 tests pass (`npm run test`)
 - **Notes:** PathGuard raw-path check added to handle Windows path resolution differences for Unix-style forbidden paths.
+
+## Session 3 — Core types + storage
+- **Completed:** 2026-04-25T16:40:00Z
+- **Files added/modified:** 5
+- **Key outcomes:**
+  - `src/core/types.ts` — complete type system: UserProfile, Project, Step, Edge, MemoryEntry, AuditEntry, all enums
+  - `src/core/storage/paths.ts` — central path resolver using PathGuard for all workspace locations
+  - `src/core/storage/storage.ts` — Storage facade with atomic reads/writes via SafeWriter; profile, project CRUD, memory append, audit log append
+  - `src/core/storage/__tests__/storage.test.ts` — 7 storage tests (round-trips, memory, audit)
+  - All 18 tests pass (`npm run test`)
+- **Notes:** —
