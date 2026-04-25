@@ -14,12 +14,14 @@ export default function Home() {
       <div className="flex gap-4 flex-wrap justify-center">
         <Link
           href="/onboarding"
+          prefetch={false}
           className="inline-flex items-center justify-center rounded-lg bg-primary px-5 h-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           {t('home.newProject')}
         </Link>
         <Link
           href="/import"
+          prefetch={false}
           className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-5 h-10 text-sm font-medium hover:bg-muted transition-colors"
         >
           {t('home.openProject')}
