@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import LocaleToggle from './LocaleToggle';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -14,9 +13,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-1">
           <LocaleToggle />
-          <Button variant="ghost" size="icon" aria-label="Settings">
+          <button
+            aria-label="Settings"
+            className="inline-flex items-center justify-center size-8 rounded-md hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <Settings className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </header>
       <main className="flex-1">{children}</main>
