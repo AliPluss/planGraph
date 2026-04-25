@@ -52,3 +52,15 @@
   - `src/proxy.ts` — localhost-only check migrated to Next.js 16 proxy convention (middleware deprecated in v16)
   - Dev server boots cleanly; locale toggle switches EN/AR with RTL flip
 - **Notes:** Next.js 16 renamed `middleware.ts` to `proxy.ts` (new file convention). Both kept for now; middleware file is the legacy one.
+
+## Session 5 — Onboarding flow
+- **Completed:** 2026-04-25T18:00:00Z
+- **Files added/modified:** 7
+- **Key outcomes:**
+  - `src/app/onboarding/page.tsx` — 4-step wizard: skill level, languages (chips + custom), executor tools, preferences; review screen with edit links; posts to API on finish
+  - `src/app/api/profile/route.ts` — GET returns profile or null; POST validates and writes via Storage
+  - `src/lib/store/onboarding-store.ts` — Zustand store for in-memory wizard state
+  - Translation keys added under `onboarding.*` in both `en.json` and `ar.json`
+  - `src/app/page.tsx` — checks `/api/profile` on mount; redirects to `/onboarding` if missing
+  - Dev server boots cleanly; 18/18 tests pass
+- **Notes:** —

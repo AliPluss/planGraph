@@ -20,5 +20,41 @@
     "welcome": "Welcome to PlanGraph",
     "newProject": "New Project",
     "openProject": "Open Project"
+  },
+  "onboarding": {
+    "title": "Set up your profile",
+    "subtitle": "Help us tailor the experience to you. Takes about 1 minute.",
+    "step1": {
+      "title": "What's your experience level?",
+      "beginner": "Beginner — I haven't built a complete project yet",
+      "intermediate": "Intermediate — I've built simple projects",
+      "advanced": "Advanced — I work in software professionally"
+    },
+    "step2": {
+      "title": "What languages and tools do you use?",
+      "hint": "Select all that apply, or add your own.",
+      "addCustom": "Add custom...",
+      "skip": "Skip this step"
+    },
+    "step3": {
+      "title": "Which executor tools do you use?",
+      "hint": "PlanGraph will generate prompts tailored to your chosen tools."
+    },
+    "step4": {
+      "title": "Your preferences",
+      "communication": {
+        "detailed": "Detailed — I want full explanations",
+        "concise": "Concise — Just the essentials"
+      },
+      "locale": "Preferred language"
+    },
+    "review": {
+      "title": "Review your profile",
+      "edit": "Edit",
+      "finish": "Finish setup"
+    },
+    "progress": {
+      "stepOf": "Step {{current}} of {{total}}"
+    }
   }
 }
