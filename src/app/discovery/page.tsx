@@ -6,6 +6,9 @@ import { useTranslation } from 'react-i18next';
 import '@/lib/i18n/i18n';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import type { Question, ScopeSummary, ProjectKind } from '@/core/discovery/types';
 
@@ -56,6 +59,13 @@ function DiscoveryContent() {
   const [currentAnswers, setCurrentAnswers] = useState<Record<string, unknown>>({});
 
   const [summary, setSummary] = useState<ScopeSummary | null>(null);
+
+  // Generate project dialog
+  const [genDialogOpen, setGenDialogOpen] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [rootPath, setRootPath] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const startDiscovery = useCallback(async () => {
     if (!ideaText.trim()) return;
@@ -138,6 +148,25 @@ function DiscoveryContent() {
     currentBatch.forEach((q) => { if (withNulls[q.id] === undefined) withNulls[q.id] = null; });
     doSubmit(withNulls);
   }, [doSubmit, currentBatch, currentAnswers]);
+
+  const handleGenerate = useCallback(async (name: string, path: string) => {
+    if (!summary) return;
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ summary, name, rootPath: path || undefined }),
+      });
+      const json = await res.json() as { data?: { id: string }; error?: string };
+      if (!res.ok || !json.data?.id) throw new Error(json.error ?? 'Failed to create project');
+      router.push(`/project/${json.data.id}`);
+    } catch (e) {
+      setGenerateError(String(e));
+      setGenerating(false);
+    }
+  }, [summary, router]);
 
   const goBack = () => {
     if (phase === 'summary') {
@@ -270,15 +299,68 @@ function DiscoveryContent() {
   // — Phase: summary
   if (phase === 'summary' && summary) {
     return (
-      <SummaryView
-        summary={summary}
-        locale={i18n.language as 'en' | 'ar'}
-        onEdit={goBack}
-        onGenerate={() => {
-          // Session 9 will wire up the actual generation flow
-          router.push('/onboarding');
-        }}
-      />
+      <>
+        <SummaryView
+          summary={summary}
+          locale={i18n.language as 'en' | 'ar'}
+          onEdit={goBack}
+          onGenerate={() => {
+            setProjectName(summary.idea.split(' ').slice(0, 4).join(' '));
+            setGenerateError(null);
+            setGenDialogOpen(true);
+          }}
+        />
+
+        <Dialog open={genDialogOpen} onOpenChange={setGenDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('generate.dialogTitle')}</DialogTitle>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-3 py-1">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">{t('generate.nameLabel')}</label>
+                <input
+                  autoFocus
+                  className="rounded-lg border border-border bg-background px-3 h-9 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder={t('generate.namePlaceholder')}
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-muted-foreground">{t('generate.rootLabel')}</label>
+                <input
+                  className="rounded-lg border border-border bg-background px-3 h-9 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder={t('generate.rootPlaceholder')}
+                  value={rootPath}
+                  onChange={(e) => setRootPath(e.target.value)}
+                  dir="ltr"
+                />
+              </div>
+              {generateError && <p className="text-xs text-destructive">{generateError}</p>}
+            </div>
+
+            <DialogFooter>
+              <button
+                onClick={() => setGenDialogOpen(false)}
+                className="inline-flex items-center px-4 h-9 text-sm border border-border rounded-lg hover:bg-muted transition-colors"
+              >
+                {t('generate.cancel')}
+              </button>
+              <button
+                onClick={() => handleGenerate(projectName, rootPath)}
+                disabled={!projectName.trim() || generating}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 h-9 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {generating && <Loader2 className="w-4 h-4 animate-spin" />}
+                {generating ? t('generate.creating') : t('generate.create')}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 

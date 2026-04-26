@@ -19,7 +19,11 @@
   "home": {
     "welcome": "Welcome to PlanGraph",
     "newProject": "New Project",
-    "openProject": "Open Project"
+    "openProject": "Open Project",
+    "recentProjects": "Recent projects",
+    "noProjects": "No projects yet. Create your first one!",
+    "projectTemplate": "{{template}}",
+    "projectStepsDone": "{{done}} / {{total}} steps"
   },
   "discovery": {
     "title": "Discover your project",
@@ -57,6 +61,49 @@
       "ai-agent": "AI Agent",
       "unknown": "Custom"
     }
+  },
+  "project": {
+    "loading": "Loading project...",
+    "notFound": "Project not found",
+    "backHome": "Back to home",
+    "stepCount": "{{count}} steps",
+    "progress": "{{done}} / {{total}} done",
+    "stepPanel": {
+      "goal": "Goal",
+      "libraries": "Libraries",
+      "criteria": "Success criteria",
+      "restrictions": "Restrictions",
+      "prompt": "Executor prompt",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "statusLabel": "Status",
+      "actions": {
+        "start": "Start",
+        "done": "Mark done",
+        "fail": "Mark failed",
+        "reopen": "Reopen",
+        "review": "Needs review"
+      },
+      "status": {
+        "not_started": "Not started",
+        "ready": "Ready",
+        "in_progress": "In progress",
+        "done": "Done",
+        "failed": "Failed",
+        "needs_review": "Needs review",
+        "blocked": "Blocked"
+      }
+    }
+  },
+  "generate": {
+    "dialogTitle": "Create project",
+    "nameLabel": "Project name",
+    "namePlaceholder": "My Awesome App",
+    "rootLabel": "Workspace folder (optional)",
+    "rootPlaceholder": "./workspace/projects/my-app",
+    "create": "Create project",
+    "creating": "Creating...",
+    "cancel": "Cancel"
   },
   "onboarding": {
     "title": "Set up your profile",

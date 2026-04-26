@@ -1,8 +1,5 @@
-export type ProjectKind =
-  | 'web-app' | 'mobile-app' | 'browser-extension'
-  | 'rest-api' | 'cli-tool' | 'discord-bot'
-  | 'telegram-bot' | 'landing-page' | '3d-web'
-  | 'n8n-workflow' | 'ai-agent' | 'unknown';
+export type { ProjectKind } from '../types';
+import type { ProjectKind } from '../types';
 
 export interface Question {
   id: string;

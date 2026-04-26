@@ -1,5 +1,33 @@
 # PlanGraph — Build Progress
 
+## Session 9 — Step Execution & Project List
+- **Completed:** 2026-04-26T01:00:00Z
+- **Files added/modified:** 6
+- **Key outcomes:**
+  - `src/app/api/projects/[id]/steps/[stepId]/route.ts` — PATCH handler: updates step status + timestamps, propagates readiness (done → unlocks dependents), propagates blocked (failed → blocks dependents), writes audit log
+  - `src/app/project/[id]/page.tsx` — step detail panel gains: status badge, Start/Done/Failed/Reopen/Review buttons (context-aware), executor prompt display with copy-to-clipboard, optimistic state update (no page reload after PATCH); header gains progress bar (done/total)
+  - `src/app/page.tsx` — home page now fetches and lists recent projects: name, template badge, progress bar (done/total steps), last-updated date; empty state for new users; "New Project" stays as primary CTA
+  - `src/lib/i18n/translations/en.json` + `ar.json` — new keys: `project.progress`, `project.stepPanel.prompt/copy/copied/statusLabel/actions.*/ status.*`, `home.recentProjects/noProjects/projectStepsDone`
+  - `npm run build` succeeds cleanly; 103/103 tests pass
+- **Notes:** Status propagation: marking a step `done` sets all steps whose full dependency set is now satisfied to `ready`; marking `failed` sets direct dependents that are `ready`/`not_started` to `blocked`.
+
+## Session 8 — Plan Builder + Project Graph View
+- **Completed:** 2026-04-26T00:00:00Z
+- **Files added/modified:** 11
+- **Key outcomes:**
+  - `src/core/plan-builder/builder.ts` — `buildProject(summary, opts)`: topological sort, blueprint→Step conversion with locale/executor, layered x/y position assignment, affects map
+  - `src/core/plan-builder/__tests__/builder.test.ts` — 13 tests (all pass); total 103/103
+  - `src/app/api/projects/route.ts` — POST creates project from ScopeSummary, GET lists all projects
+  - `src/app/api/projects/[id]/route.ts` — GET single project (async params per Next.js 16)
+  - `src/components/plangraph/StepNode.tsx` — custom React Flow node: step number, title, type badge (6 color-coded types), status dot (7 states)
+  - `src/app/project/[id]/page.tsx` — full-screen React Flow graph with MiniMap, Controls, dot Background; slide-in step detail panel (goal, libraries, criteria, restrictions)
+  - `src/app/discovery/page.tsx` — "Generate Plan" opens Dialog asking for project name + optional root path; POSTs to `/api/projects`; navigates to `/project/[id]`
+  - `src/core/types.ts` — added `ProjectKind` (fixes pre-existing type error in templates)
+  - `src/core/discovery/types.ts` — re-exports `ProjectKind` from central types (no breaking change)
+  - Translations: added `project.*` and `generate.*` namespaces to both `en.json` and `ar.json`
+  - `npm run build` succeeds cleanly; 103/103 tests pass
+- **Notes:** `ProjectKind` was declared in `discovery/types.ts` but imported from `core/types.ts` by templates — fixed by moving the declaration to `core/types.ts` and re-exporting from discovery.
+
 ## Session 1 — Project skeleton
 - **Completed:** 2026-04-25T16:00:00Z
 - **Files added/modified:** 20+

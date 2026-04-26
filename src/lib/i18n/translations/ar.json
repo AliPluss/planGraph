@@ -19,7 +19,11 @@
   "home": {
     "welcome": "مرحباً بك في PlanGraph",
     "newProject": "مشروع جديد",
-    "openProject": "فتح مشروع"
+    "openProject": "فتح مشروع",
+    "recentProjects": "المشاريع الأخيرة",
+    "noProjects": "لا توجد مشاريع بعد. أنشئ مشروعك الأول!",
+    "projectTemplate": "{{template}}",
+    "projectStepsDone": "{{done}} / {{total}} خطوات"
   },
   "discovery": {
     "title": "اكتشف مشروعك",
@@ -57,6 +61,49 @@
       "ai-agent": "وكيل ذكاء اصطناعي",
       "unknown": "مخصص"
     }
+  },
+  "project": {
+    "loading": "جارٍ تحميل المشروع...",
+    "notFound": "المشروع غير موجود",
+    "backHome": "العودة إلى الرئيسية",
+    "stepCount": "{{count}} خطوات",
+    "progress": "{{done}} / {{total}} مكتملة",
+    "stepPanel": {
+      "goal": "الهدف",
+      "libraries": "المكتبات",
+      "criteria": "معايير النجاح",
+      "restrictions": "القيود",
+      "prompt": "مطالبة التنفيذ",
+      "copy": "نسخ",
+      "copied": "تم النسخ!",
+      "statusLabel": "الحالة",
+      "actions": {
+        "start": "ابدأ",
+        "done": "تمت",
+        "fail": "فشلت",
+        "reopen": "أعد الفتح",
+        "review": "تحتاج مراجعة"
+      },
+      "status": {
+        "not_started": "لم تبدأ",
+        "ready": "جاهزة",
+        "in_progress": "قيد التنفيذ",
+        "done": "مكتملة",
+        "failed": "فشلت",
+        "needs_review": "تحتاج مراجعة",
+        "blocked": "محجوبة"
+      }
+    }
+  },
+  "generate": {
+    "dialogTitle": "إنشاء مشروع",
+    "nameLabel": "اسم المشروع",
+    "namePlaceholder": "تطبيقي الرائع",
+    "rootLabel": "مجلد العمل (اختياري)",
+    "rootPlaceholder": "./workspace/projects/my-app",
+    "create": "إنشاء المشروع",
+    "creating": "جارٍ الإنشاء...",
+    "cancel": "إلغاء"
   },
   "onboarding": {
     "title": "إعداد ملفك الشخصي",

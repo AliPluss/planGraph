@@ -1,3 +1,9 @@
+export type ProjectKind =
+  | 'web-app' | 'mobile-app' | 'browser-extension'
+  | 'rest-api' | 'cli-tool' | 'discord-bot'
+  | 'telegram-bot' | 'landing-page' | '3d-web'
+  | 'n8n-workflow' | 'ai-agent' | 'unknown';
+
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced';
 export type ExecutorTool = 'claude-code' | 'cursor' | 'antigravity' | 'copilot' | 'manual';
 export type Locale = 'ar' | 'en';
