@@ -18,7 +18,7 @@ export class SafeCommandRunner {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { cwd, shell: false });
+      const child = spawn(command, args, { cwd, shell: process.platform === 'win32' });
       let stdout = "";
       let stderr = "";
       let timedOut = false;
@@ -60,7 +60,7 @@ export class SafeCommandRunner {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { cwd, shell: false });
+      const child = spawn(command, args, { cwd, shell: process.platform === 'win32' });
       let fullStdout = "";
       let stderr = "";
       let timedOut = false;

@@ -118,3 +118,10 @@ export interface AuditEntry {
   stepId?: string;
   details?: Record<string, unknown>;
 }
+
+export interface ReportSummary {
+  status: 'success' | 'error';
+  summary: string;
+  durationMs: number;
+  exitCode: number;
+}
