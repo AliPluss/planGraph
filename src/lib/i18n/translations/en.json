@@ -134,6 +134,18 @@
       "ar": "العربية"
     }
   },
+  "run": {
+    "title": "Run step",
+    "instructions": "Executor instructions",
+    "copyPrompt": "Copy prompt",
+    "copiedPrompt": "Copied!",
+    "promptFile": "Prompt file",
+    "reportPath": "Write the report to",
+    "watching": "Watching for report…",
+    "stepComplete": "Step completed!",
+    "dismiss": "Dismiss",
+    "close": "Close"
+  },
   "generate": {
     "dialogTitle": "Create project",
     "nameLabel": "Project name",

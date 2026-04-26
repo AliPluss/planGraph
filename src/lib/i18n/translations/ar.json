@@ -134,6 +134,18 @@
       "ar": "العربية"
     }
   },
+  "run": {
+    "title": "تشغيل الخطوة",
+    "instructions": "تعليمات التنفيذ",
+    "copyPrompt": "نسخ المطالبة",
+    "copiedPrompt": "تم النسخ!",
+    "promptFile": "ملف المطالبة",
+    "reportPath": "اكتب التقرير إلى",
+    "watching": "في انتظار التقرير…",
+    "stepComplete": "اكتملت الخطوة!",
+    "dismiss": "إغلاق",
+    "close": "إغلاق"
+  },
   "generate": {
     "dialogTitle": "إنشاء مشروع",
     "nameLabel": "اسم المشروع",

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { storage } from '@/core/storage/storage';
 import { buildProject, type BuildOptions } from '@/core/plan-builder/builder';
+import { mdWriter } from '@/core/markdown/md-writer';
 import type { ScopeSummary } from '@/core/discovery/types';
 
 export async function GET() {
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
 
     const project = buildProject(body.summary, opts);
     await storage.writeProject(project);
+    await mdWriter.writeProject(project);
 
     await storage.appendAudit(
       {

@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState, useCallback } from 'react';
+import { use, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n/i18n';
@@ -14,12 +14,21 @@ import ReactFlow, {
   type NodeTypes,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ArrowLeft, X, Copy, Check } from 'lucide-react';
+import { ArrowLeft, X, Copy, Check, Play, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StepNode, { type StepNodeData } from '@/components/plangraph/StepNode';
 import type { Project, Step, StepStatus, MemoryEntry } from '@/core/types';
 
 const nodeTypes: NodeTypes = { stepNode: StepNode };
+
+interface RunResult {
+  instructions: string;
+  promptText: string;
+  promptFilePath: string;
+  executor: string;
+  stepId: string;
+  reportPath: string;
+}
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -33,6 +42,15 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [updating, setUpdating] = useState(false);
   const [addingMemory, setAddingMemory] = useState(false);
+
+  // Run modal state
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const [runLoading, setRunLoading] = useState(false);
+  // Banner shown when a report is detected via SSE
+  const [completedStep, setCompletedStep] = useState<string | null>(null);
+
+  // SSE connection ref
+  const sseRef = useRef<EventSource | null>(null);
 
   const fetchProject = useCallback(() => {
     return fetch(`/api/projects/${id}`)
@@ -56,6 +74,70 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     fetchProject().finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // SSE: watch for report files and auto-advance steps
+  useEffect(() => {
+    const es = new EventSource(`/api/projects/${id}/watch`);
+    sseRef.current = es;
+
+    es.onmessage = (e) => {
+      if (!e.data.trim() || e.data.startsWith(':')) return;
+      try {
+        const msg = JSON.parse(e.data) as { stepId?: string; event?: string };
+        if (msg.stepId && msg.event === 'report_detected') {
+          // Mark the step done via PATCH
+          void fetch(`/api/projects/${id}/steps/${msg.stepId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'done' }),
+          })
+            .then((r) => r.json() as Promise<{ data?: Project }>)
+            .then((json) => {
+              if (json.data) {
+                setProject(json.data);
+                setSelectedStep((prev) =>
+                  prev ? (json.data!.steps.find((s) => s.id === prev.id) ?? null) : null,
+                );
+              }
+              setCompletedStep(msg.stepId!);
+              setTimeout(() => setCompletedStep(null), 4000);
+            });
+        }
+      } catch { /* ignore parse errors */ }
+    };
+
+    return () => {
+      es.close();
+      sseRef.current = null;
+    };
+  }, [id]);
+
+  const handleRunStep = useCallback(
+    async (stepId: string) => {
+      if (!project || runLoading) return;
+      setRunLoading(true);
+      try {
+        const res = await fetch(`/api/projects/${id}/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stepId }),
+        });
+        const json = await res.json() as {
+          data?: { instructions: string; promptText: string; promptFilePath: string; executor: string };
+        };
+        if (json.data) {
+          setRunResult({
+            ...json.data,
+            stepId,
+            reportPath: `workspace/projects/${id}/reports/${stepId}_report.md`,
+          });
+        }
+      } finally {
+        setRunLoading(false);
+      }
+    },
+    [id, project, runLoading],
+  );
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, rfNode: RFNode<StepNodeData>) => {
@@ -227,10 +309,34 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             memories={project.memory.filter((m) => m.stepId === selectedStep.id)}
             onAddMemory={(cat, text) => handleAddMemory(selectedStep.id, cat, text)}
             addingMemory={addingMemory}
+            onRun={(stepId) => {
+              void handleStatusChange(stepId, 'in_progress').then(() =>
+                handleRunStep(stepId),
+              );
+            }}
+            runLoading={runLoading}
             t={t}
           />
         )}
+
+        {/* Step-complete banner */}
+        {completedStep && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-lg flex items-center gap-2">
+            <Check className="w-4 h-4 shrink-0" />
+            {t('run.stepComplete')}
+          </div>
+        )}
       </div>
+
+      {/* Run modal */}
+      {runResult && (
+        <RunModal
+          result={runResult}
+          locale={locale}
+          onClose={() => setRunResult(null)}
+          t={t}
+        />
+      )}
     </div>
   );
 }
@@ -264,6 +370,8 @@ function StepDetailPanel({
   memories,
   onAddMemory,
   addingMemory,
+  onRun,
+  runLoading,
   t,
 }: {
   step: Step;
@@ -275,6 +383,8 @@ function StepDetailPanel({
   memories: MemoryEntry[];
   onAddMemory: (category: MemoryEntry['category'], text: string) => Promise<void>;
   addingMemory: boolean;
+  onRun: (stepId: string) => void;
+  runLoading: boolean;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const isRtl = locale === 'ar';
@@ -324,13 +434,18 @@ function StepDetailPanel({
             </span>
           </div>
           <div className="flex gap-1.5 mt-2 flex-wrap">
-            <StatusButton
-              label={t('project.stepPanel.actions.start')}
-              show={step.status === 'not_started' || step.status === 'ready' || step.status === 'blocked'}
-              disabled={updating}
-              onClick={() => onStatusChange('in_progress')}
-              variant="primary"
-            />
+            {/* Run button — sets in_progress AND opens instructions modal */}
+            {(step.status === 'not_started' || step.status === 'ready' || step.status === 'blocked') && (
+              <button
+                onClick={() => onRun(step.id)}
+                disabled={updating || runLoading}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {runLoading
+                  ? <><Loader2 className="w-3 h-3 animate-spin" />{t('project.stepPanel.actions.start')}</>
+                  : <><Play className="w-3 h-3" />{t('project.stepPanel.actions.start')}</>}
+              </button>
+            )}
             <StatusButton
               label={t('project.stepPanel.actions.done')}
               show={step.status === 'in_progress' || step.status === 'needs_review'}
@@ -530,6 +645,112 @@ function StepDetailPanel({
             </div>
           )}
         </section>
+      </div>
+    </div>
+  );
+}
+
+// ─── Run modal ───────────────────────────────────────────────────────────────
+
+function RunModal({
+  result,
+  locale,
+  onClose,
+  t,
+}: {
+  result: RunResult;
+  locale: 'en' | 'ar';
+  onClose: () => void;
+  t: (key: string) => string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const isRtl = locale === 'ar';
+
+  function copyPrompt() {
+    navigator.clipboard.writeText(result.promptText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
+      <div className="bg-background rounded-xl border shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
+          <div>
+            <h2 className="font-semibold text-sm">{t('run.title')}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{result.executor}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="inline-flex items-center justify-center size-7 rounded-md hover:bg-muted transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4 text-sm">
+          {/* Instructions */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+              {t('run.instructions')}
+            </h3>
+            <pre className="text-xs leading-relaxed whitespace-pre-wrap bg-muted rounded-lg px-3 py-2.5 text-muted-foreground">
+              {result.instructions}
+            </pre>
+          </section>
+
+          {/* Prompt */}
+          <section>
+            <div className="flex items-center justify-between mb-1.5">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('run.promptFile')}: <span className="font-mono normal-case">{result.promptFilePath}</span>
+              </h3>
+              <button
+                onClick={copyPrompt}
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              >
+                {copied
+                  ? <><Check className="w-3 h-3 text-emerald-500" />{t('run.copiedPrompt')}</>
+                  : <><Copy className="w-3 h-3" />{t('run.copyPrompt')}</>}
+              </button>
+            </div>
+            <pre className="text-[11px] leading-relaxed whitespace-pre-wrap bg-muted rounded-lg px-3 py-2.5 text-muted-foreground overflow-auto max-h-52">
+              {result.promptText}
+            </pre>
+          </section>
+
+          {/* Report path */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+              {t('run.reportPath')}
+            </h3>
+            <code className="text-xs bg-muted px-2.5 py-1 rounded font-mono block">
+              {result.reportPath}
+            </code>
+          </section>
+
+          {/* Watching indicator */}
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            {t('run.watching')}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t shrink-0">
+          <button
+            onClick={onClose}
+            className="w-full h-9 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
+          >
+            {t('run.close')}
+          </button>
+        </div>
       </div>
     </div>
   );

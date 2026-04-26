@@ -1,5 +1,21 @@
 # PlanGraph — Build Progress
 
+## Session 11 — Markdown Writer + Executor Adapters + Report Watcher
+- **Completed:** 2026-04-26T03:00:00Z
+- **Files added/modified:** 10
+- **Key outcomes:**
+  - `src/core/markdown/md-writer.ts` — `MarkdownWriter` class: `writeProject()` writes `OVERVIEW.md`, `ROADMAP.md`, `MEMORY.md` skeleton (if missing), and per-step `steps/<id>.md` with full content (goal, libraries table, success criteria, restrictions, rich executor prompts); exports `buildRichPrompt()` for use by adapters
+  - `src/core/adapters/types.ts` — `ExecutionContext`, `ExecutionResult`, `ExecutorAdapter` interfaces
+  - `src/core/adapters/manual-adapter.ts` — Manual adapter: `prepare()` builds a rich prompt, writes it to `<projectRoot>/.plangraph/PROMPT.md` (+ `.gitignore`), returns file path and human-readable instructions
+  - `src/core/adapters/registry.ts` — `getAdapter(tool)` factory; falls back to `manualAdapter` for unimplemented tools
+  - `src/app/api/projects/[id]/run/route.ts` — `POST { stepId }`: invokes the project's executor adapter, writes `PROMPT.md`, appends `EXECUTOR_INVOKED` audit entry, returns `{ instructions, promptText, promptFilePath, executor }`
+  - `src/app/api/projects/[id]/watch/route.ts` — `GET` SSE stream: uses chokidar to watch `workspace/projects/<id>/reports/` for new `<stepId>_report.md` files; sends `{ stepId, event: "report_detected" }` events; heartbeat every 25s; cleans up watcher on client disconnect
+  - `src/app/api/projects/route.ts` — `POST` now calls `mdWriter.writeProject()` after creating a project, so all markdown files are generated immediately
+  - `src/app/project/[id]/page.tsx` — Start button now calls `handleRunStep()` which POSTs to `/run` and opens a `RunModal`; SSE `EventSource` set up on mount to auto-PATCH step to `done` when a report appears; `completedStep` banner shown for 4 seconds; `RunModal` shows instructions, prompt preview, copy button, report path, and a "watching" indicator
+  - `src/lib/i18n/translations/en.json` + `ar.json` — added `run.*` namespace (title, instructions, copyPrompt, copiedPrompt, promptFile, reportPath, watching, stepComplete, dismiss, close)
+  - `npm run build` succeeds cleanly; 103/103 tests pass
+- **Notes:** SSE uses the Web Streams API (ReadableStream) and is marked `export const dynamic = 'force-dynamic'`. The report watcher uses chokidar v5 with `awaitWriteFinish` to avoid reading partial files. All paths go through PathGuard via `getReportsDir()`.
+
 ## Session 10 — Settings Page + Memory Panel
 - **Completed:** 2026-04-26T02:00:00Z
 - **Files added/modified:** 6
