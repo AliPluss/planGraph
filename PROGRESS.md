@@ -59,6 +59,7 @@
 
 ## Session 8 — Plan Builder + Project Graph View
 - **Completed:** 2026-04-26T00:00:00Z
+- **Verified on 2026-04-26:** All spec artifacts confirmed present. Accepted divergences: `src/core/planner/` → `src/core/plan-builder/` (equivalent functionality, all tests pass). `api/projects/route.ts` ✅, `api/projects/[id]/route.ts` ✅, `StepNode.tsx` ✅, `project/[id]/page.tsx` with ReactFlow ✅. No repairs needed.
 - **Files added/modified:** 11
 - **Key outcomes:**
   - `src/core/plan-builder/builder.ts` — `buildProject(summary, opts)`: topological sort, blueprint→Step conversion with locale/executor, layered x/y position assignment, affects map
