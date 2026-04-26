@@ -20,6 +20,7 @@
 
 ## Session 11 — Markdown Writer + Executor Adapters + Report Watcher
 - **Completed:** 2026-04-26T03:00:00Z
+- **Verified on 2026-04-26 (covers spec Session 9 — Markdown Writer):** `md-writer.ts` ✅. `api/project/route.ts` → accepted divergence (using `api/projects/`). **Repaired:** added `src/core/markdown/__tests__/md-writer.test.ts` (9 tests: OVERVIEW.md, ROADMAP.md, MEMORY.md, steps/*.md creation, goal content, prompt section, success criteria, MEMORY.md not overwritten, reports/ dir). 124/124 tests pass.
 - **Files added/modified:** 10
 - **Key outcomes:**
   - `src/core/markdown/md-writer.ts` — `MarkdownWriter` class: `writeProject()` writes `OVERVIEW.md`, `ROADMAP.md`, `MEMORY.md` skeleton (if missing), and per-step `steps/<id>.md` with full content (goal, libraries table, success criteria, restrictions, rich executor prompts); exports `buildRichPrompt()` for use by adapters
