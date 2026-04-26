@@ -17,7 +17,7 @@ import 'reactflow/dist/style.css';
 import { ArrowLeft, X, Copy, Check, Play, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StepNode, { type StepNodeData } from '@/components/plangraph/StepNode';
-import type { Project, Step, StepStatus, MemoryEntry } from '@/core/types';
+import type { Project, Step, StepStatus, MemoryEntry, ReportSummary } from '@/core/types';
 
 const nodeTypes: NodeTypes = { stepNode: StepNode };
 
@@ -28,6 +28,8 @@ interface RunResult {
   executor: string;
   stepId: string;
   reportPath: string;
+  autoRunning?: boolean;
+  reportSummary?: ReportSummary;
 }
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -83,13 +85,27 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     es.onmessage = (e) => {
       if (!e.data.trim() || e.data.startsWith(':')) return;
       try {
-        const msg = JSON.parse(e.data) as { stepId?: string; event?: string };
+        const msg = JSON.parse(e.data) as {
+          stepId?: string;
+          event?: string;
+          reportSummary?: ReportSummary;
+        };
         if (msg.stepId && msg.event === 'report_detected') {
-          // Mark the step done via PATCH
+          // Update RunModal if it's open for this step
+          if (msg.reportSummary) {
+            const summary = msg.reportSummary;
+            setRunResult((prev) =>
+              prev !== null && prev.stepId === msg.stepId
+                ? { ...prev, reportSummary: summary }
+                : prev,
+            );
+          }
+          // Use report exit status to determine step status
+          const newStatus = msg.reportSummary?.status === 'error' ? 'failed' : 'done';
           void fetch(`/api/projects/${id}/steps/${msg.stepId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'done' }),
+            body: JSON.stringify({ status: newStatus }),
           })
             .then((r) => r.json() as Promise<{ data?: Project }>)
             .then((json) => {
@@ -123,7 +139,13 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           body: JSON.stringify({ stepId }),
         });
         const json = await res.json() as {
-          data?: { instructions: string; promptText: string; promptFilePath: string; executor: string };
+          data?: {
+            instructions: string;
+            promptText: string;
+            promptFilePath: string;
+            executor: string;
+            autoRunning?: boolean;
+          };
         };
         if (json.data) {
           setRunResult({
@@ -319,13 +341,17 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           />
         )}
 
-        {/* Step-complete banner */}
-        {completedStep && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-lg flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
-            {t('run.stepComplete')}
-          </div>
-        )}
+        {/* Step-complete/failed banner */}
+        {completedStep && (() => {
+          const step = project.steps.find((s) => s.id === completedStep);
+          const failed = step?.status === 'failed';
+          return (
+            <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2.5 rounded-lg text-white text-sm font-medium shadow-lg flex items-center gap-2 ${failed ? 'bg-destructive' : 'bg-emerald-600'}`}>
+              <Check className="w-4 h-4 shrink-0" />
+              {failed ? t('run.stepFailed') : t('run.stepComplete')}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Run modal */}
@@ -661,10 +687,11 @@ function RunModal({
   result: RunResult;
   locale: 'en' | 'ar';
   onClose: () => void;
-  t: (key: string) => string;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const [copied, setCopied] = useState(false);
   const isRtl = locale === 'ar';
+  const { autoRunning, reportSummary } = result;
 
   function copyPrompt() {
     navigator.clipboard.writeText(result.promptText).then(() => {
@@ -695,17 +722,52 @@ function RunModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4 text-sm">
-          {/* Instructions */}
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
-              {t('run.instructions')}
-            </h3>
-            <pre className="text-xs leading-relaxed whitespace-pre-wrap bg-muted rounded-lg px-3 py-2.5 text-muted-foreground">
-              {result.instructions}
-            </pre>
-          </section>
 
-          {/* Prompt */}
+          {/* Auto-run status card OR manual instructions */}
+          {autoRunning ? (
+            <section>
+              {reportSummary ? (
+                <div className={`px-4 py-3 rounded-lg border ${
+                  reportSummary.status === 'success'
+                    ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800'
+                    : 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {reportSummary.status === 'success'
+                      ? <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      : <X className="w-4 h-4 text-red-600 shrink-0" />
+                    }
+                    <span className="text-sm font-medium">
+                      {reportSummary.status === 'success' ? t('run.reportSuccess') : t('run.reportError')}
+                    </span>
+                    <span className="ms-auto text-[11px] text-muted-foreground shrink-0">
+                      {t('run.duration', { ms: reportSummary.durationMs })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {reportSummary.summary}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted">
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{t('run.autoRunning')}</span>
+                </div>
+              )}
+            </section>
+          ) : (
+            /* Manual instructions */
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+                {t('run.instructions')}
+              </h3>
+              <pre className="text-xs leading-relaxed whitespace-pre-wrap bg-muted rounded-lg px-3 py-2.5 text-muted-foreground">
+                {result.instructions}
+              </pre>
+            </section>
+          )}
+
+          {/* Prompt (always shown, shorter when auto-running) */}
           <section>
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -720,7 +782,7 @@ function RunModal({
                   : <><Copy className="w-3 h-3" />{t('run.copyPrompt')}</>}
               </button>
             </div>
-            <pre className="text-[11px] leading-relaxed whitespace-pre-wrap bg-muted rounded-lg px-3 py-2.5 text-muted-foreground overflow-auto max-h-52">
+            <pre className={`text-[11px] leading-relaxed whitespace-pre-wrap bg-muted rounded-lg px-3 py-2.5 text-muted-foreground overflow-auto ${autoRunning ? 'max-h-28' : 'max-h-52'}`}>
               {result.promptText}
             </pre>
           </section>
@@ -735,11 +797,13 @@ function RunModal({
             </code>
           </section>
 
-          {/* Watching indicator */}
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            {t('run.watching')}
-          </div>
+          {/* Watching indicator — hide once report is received */}
+          {!reportSummary && (
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              {t('run.watching')}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

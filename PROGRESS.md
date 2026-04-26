@@ -1,5 +1,23 @@
 # PlanGraph — Build Progress
 
+## Session 12 — Claude Code Adapter + Report Parser
+- **Completed:** 2026-04-26T04:00:00Z
+- **Files added/modified:** 11
+- **Key outcomes:**
+  - `src/core/types.ts` — added `ReportSummary` interface `{ status, summary, durationMs, exitCode }` (shared by adapters and UI)
+  - `src/core/security/command-runner.ts` — `spawn()` now uses `shell: process.platform === 'win32'` for cross-platform CLI invocation (fixes npm/claude on Windows)
+  - `src/core/markdown/report-parser.ts` — `buildReport(stepTitle, output, exitCode, durationMs)` produces structured markdown; `parseReport(content)` extracts `ReportSummary` from any report file, handling both auto-generated and free-form human-written reports
+  - `src/core/adapters/types.ts` — `ExecutionResult` gains `autoRunning?: boolean`; `ExecutorAdapter` gains optional `executeAsync(ctx): Promise<void>`; re-exports `ReportSummary`
+  - `src/core/adapters/claude-code-adapter.ts` — `supportsAutoRun: true`; `prepare()` writes `PROMPT.md` and returns `autoRunning: true`; `executeAsync()` runs `claude --print <prompt>` via `SafeCommandRunner.runStream()`, writes structured `<stepId>_report.md` to reports dir (captures exit code, duration, full stdout/stderr)
+  - `src/core/adapters/registry.ts` — `claudeCodeAdapter` registered alongside `manualAdapter`
+  - `src/app/api/projects/[id]/run/route.ts` — after `adapter.prepare()`, fire-and-forgets `adapter.executeAsync()` if defined; includes `autoRunning` in response JSON
+  - `src/app/api/projects/[id]/watch/route.ts` — on `add` event, reads and `parseReport()`s the file; includes `reportSummary` in SSE payload
+  - `src/app/project/[id]/page.tsx` — SSE handler now extracts `reportSummary`, updates `RunModal` state in-place, and PATCHes step to `'failed'` (vs `'done'`) based on `reportSummary.status`; banner shows "Step failed" in red for error reports; `RunModal` shows spinner when `autoRunning && !reportSummary`, a green/red summary card when report arrives, and hides instructions section for auto-run mode
+  - `src/lib/i18n/translations/en.json` + `ar.json` — added `run.autoRunning`, `run.reportSuccess`, `run.reportError`, `run.duration`, `run.stepFailed`
+  - `src/core/markdown/__tests__/report-parser.test.ts` — 11 tests covering `buildReport` and `parseReport` (round-trips, truncation, free-form, error detection)
+  - `npm run build` succeeds cleanly; 114/114 tests pass
+- **Notes:** `executeAsync` is fire-and-forget from the route handler (void + .catch logging); the chokidar watcher independently detects the written report. `claude --print` passes the full prompt as a positional arg — safe up to 5000 chars (InputSanitizer limit). The `parseReport` function handles both structured (auto-generated) and free-form (human-written) reports gracefully.
+
 ## Session 11 — Markdown Writer + Executor Adapters + Report Watcher
 - **Completed:** 2026-04-26T03:00:00Z
 - **Files added/modified:** 10

@@ -143,8 +143,14 @@
     "reportPath": "اكتب التقرير إلى",
     "watching": "في انتظار التقرير…",
     "stepComplete": "اكتملت الخطوة!",
+    "stepFailed": "فشلت الخطوة",
     "dismiss": "إغلاق",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "autoRunning": "Claude Code يعمل على هذه الخطوة…",
+    "reportSummary": "ملخص التنفيذ",
+    "reportSuccess": "اكتمل بنجاح",
+    "reportError": "اكتمل مع أخطاء",
+    "duration": "{{ms}}ms"
   },
   "generate": {
     "dialogTitle": "إنشاء مشروع",
