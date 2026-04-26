@@ -25,12 +25,15 @@ export async function POST(req: Request, { params }: RouteParams) {
     const adapter = getAdapter(executor);
     const projectRoot = getProjectDir(id);
 
-    const result = await adapter.prepare({
-      projectId: id,
-      project,
-      step,
-      projectRoot,
-    });
+    const ctx = { projectId: id, project, step, projectRoot };
+    const result = await adapter.prepare(ctx);
+
+    // Fire-and-forget for adapters that support auto-execution
+    if (adapter.executeAsync) {
+      void adapter.executeAsync(ctx).catch((err: unknown) => {
+        console.error('[run] executeAsync error:', String(err));
+      });
+    }
 
     await storage.appendAudit(
       {
@@ -38,7 +41,7 @@ export async function POST(req: Request, { params }: RouteParams) {
         action: 'EXECUTOR_INVOKED',
         projectId: id,
         stepId: body.stepId,
-        details: { executor, adapter: adapter.displayName },
+        details: { executor, adapter: adapter.displayName, autoRunning: result.autoRunning ?? false },
       },
       id,
     );
@@ -49,6 +52,7 @@ export async function POST(req: Request, { params }: RouteParams) {
         promptText: result.promptText,
         promptFilePath: result.promptFilePath,
         executor: adapter.displayName,
+        autoRunning: result.autoRunning ?? false,
       },
     });
   } catch (e) {

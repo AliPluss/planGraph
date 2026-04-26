@@ -2,6 +2,8 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import chokidar from 'chokidar';
 import { getReportsDir } from '@/core/storage/paths';
+import { parseReport } from '@/core/markdown/report-parser';
+import type { ReportSummary } from '@/core/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +19,6 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   const stream = new ReadableStream({
     start(controller) {
-      // Send a heartbeat comment immediately so the client knows connection is up
       controller.enqueue(encoder.encode(': connected\n\n'));
 
       const watcher = chokidar.watch(reportsDir, {
@@ -26,20 +27,26 @@ export async function GET(req: Request, { params }: RouteParams) {
         awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 },
       });
 
-      watcher.on('add', (filePath: string) => {
+      watcher.on('add', async (filePath: string) => {
         const fileName = path.basename(filePath);
         const match = fileName.match(/^(.+)_report\.md$/);
         if (!match) return;
         const stepId = match[1];
-        const payload = JSON.stringify({ stepId, event: 'report_detected' });
-        controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+
+        let reportSummary: ReportSummary | undefined;
+        try {
+          const content = await fs.readFile(filePath, 'utf-8');
+          reportSummary = parseReport(content);
+        } catch { /* ignore read errors — client will still mark step done */ }
+
+        const payload = JSON.stringify({ stepId, event: 'report_detected', reportSummary });
+        try {
+          controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+        } catch { /* stream may already be closed */ }
       });
 
-      watcher.on('error', () => {
-        // Swallow watcher errors — don't crash the stream
-      });
+      watcher.on('error', () => { /* swallow watcher errors */ });
 
-      // Heartbeat every 25s to keep the connection alive through proxies
       const heartbeat = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(': heartbeat\n\n'));

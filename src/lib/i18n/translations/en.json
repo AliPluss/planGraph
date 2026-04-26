@@ -143,8 +143,14 @@
     "reportPath": "Write the report to",
     "watching": "Watching for report…",
     "stepComplete": "Step completed!",
+    "stepFailed": "Step failed",
     "dismiss": "Dismiss",
-    "close": "Close"
+    "close": "Close",
+    "autoRunning": "Claude Code is running this step…",
+    "reportSummary": "Execution summary",
+    "reportSuccess": "Completed successfully",
+    "reportError": "Completed with errors",
+    "duration": "{{ms}}ms"
   },
   "generate": {
     "dialogTitle": "Create project",
