@@ -37,6 +37,7 @@
 
 ## Session 10 — Settings Page + Memory Panel
 - **Completed:** 2026-04-26T02:00:00Z
+- **Verified on 2026-04-26 (covers spec Session 10 — Project Workspace Shell):** `project/[id]/page.tsx` ✅. `api/projects PATCH` → accepted divergence. **Repaired:** added 5 missing spec files: `src/app/project/[id]/layout.tsx` (passthrough server layout), `src/components/plangraph/ProjectProvider.tsx` (Zustand-wired client provider), `src/lib/store/project-store.ts` (Zustand store with project/selectedStepId/setProject/selectStep/refresh), `src/components/plangraph/StepListPlaceholder.tsx` (step list with status icons), `src/components/plangraph/ExecutorSelector.tsx` (executor dropdown with PATCH). Build ✅, 124/124 tests pass.
 - **Files added/modified:** 6
 - **Key outcomes:**
   - `src/components/plangraph/AppShell.tsx` — gear icon now navigates to `/settings` (changed `<button>` to `<Link href="/settings">`)
