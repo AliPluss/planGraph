@@ -17,7 +17,7 @@ import 'reactflow/dist/style.css';
 import { ArrowLeft, X, Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StepNode, { type StepNodeData } from '@/components/plangraph/StepNode';
-import type { Project, Step, StepStatus } from '@/core/types';
+import type { Project, Step, StepStatus, MemoryEntry } from '@/core/types';
 
 const nodeTypes: NodeTypes = { stepNode: StepNode };
 
@@ -32,6 +32,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [error, setError] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [addingMemory, setAddingMemory] = useState(false);
 
   const fetchProject = useCallback(() => {
     return fetch(`/api/projects/${id}`)
@@ -86,6 +87,27 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       }
     },
     [id, project, updating],
+  );
+
+  const handleAddMemory = useCallback(
+    async (stepId: string, category: MemoryEntry['category'], text: string) => {
+      if (!project || addingMemory) return;
+      setAddingMemory(true);
+      try {
+        const res = await fetch(`/api/projects/${id}/memory`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stepId, category, text }),
+        });
+        const json = await res.json() as { data?: MemoryEntry };
+        if (json.data) {
+          setProject({ ...project, memory: [...project.memory, json.data] });
+        }
+      } finally {
+        setAddingMemory(false);
+      }
+    },
+    [id, project, addingMemory],
   );
 
   if (loading) {
@@ -202,6 +224,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             onClose={() => setSelectedStep(null)}
             onStatusChange={(status) => handleStatusChange(selectedStep.id, status)}
             updating={updating}
+            memories={project.memory.filter((m) => m.stepId === selectedStep.id)}
+            onAddMemory={(cat, text) => handleAddMemory(selectedStep.id, cat, text)}
+            addingMemory={addingMemory}
             t={t}
           />
         )}
@@ -222,6 +247,13 @@ const STATUS_BADGE: Record<StepStatus, string> = {
   blocked:      'bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400',
 };
 
+const MEMORY_CATEGORY_CLASS: Record<MemoryEntry['category'], string> = {
+  decision:   'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+  convention: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  issue:      'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  note:       'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+};
+
 function StepDetailPanel({
   step,
   locale,
@@ -229,6 +261,9 @@ function StepDetailPanel({
   onClose,
   onStatusChange,
   updating,
+  memories,
+  onAddMemory,
+  addingMemory,
   t,
 }: {
   step: Step;
@@ -237,11 +272,17 @@ function StepDetailPanel({
   onClose: () => void;
   onStatusChange: (status: StepStatus) => void;
   updating: boolean;
+  memories: MemoryEntry[];
+  onAddMemory: (category: MemoryEntry['category'], text: string) => Promise<void>;
+  addingMemory: boolean;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const isRtl = locale === 'ar';
   const required = step.recommendedLibraries.filter((l) => l.required);
   const [copied, setCopied] = useState(false);
+  const [memFormOpen, setMemFormOpen] = useState(false);
+  const [memCategory, setMemCategory] = useState<MemoryEntry['category']>('note');
+  const [memText, setMemText] = useState('');
 
   const prompt =
     step.prompts[executor as keyof typeof step.prompts] ?? step.prompts.manual;
@@ -400,6 +441,95 @@ function StepDetailPanel({
             </ul>
           </section>
         )}
+
+        {/* Memory */}
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t('project.stepPanel.memory.title')}
+              {memories.length > 0 && (
+                <span className="ms-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  {memories.length}
+                </span>
+              )}
+            </h3>
+            {!memFormOpen && (
+              <button
+                onClick={() => setMemFormOpen(true)}
+                className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                + {t('project.stepPanel.memory.addNote')}
+              </button>
+            )}
+          </div>
+
+          {memories.length === 0 && !memFormOpen && (
+            <p className="text-[11px] text-muted-foreground">
+              {t('project.stepPanel.memory.empty')}
+            </p>
+          )}
+
+          {memories.length > 0 && (
+            <ul className="flex flex-col gap-2 mb-2">
+              {memories.map((m, i) => (
+                <li key={i} className="flex flex-col gap-1">
+                  <span
+                    className={`self-start text-[10px] font-medium px-1.5 py-0.5 rounded-full ${MEMORY_CATEGORY_CLASS[m.category]}`}
+                  >
+                    {t(`project.stepPanel.memory.categories.${m.category}`)}
+                  </span>
+                  <p className="text-xs leading-snug">{m.text}</p>
+                  <span className="text-[10px] text-muted-foreground">
+                    {new Date(m.createdAt).toLocaleDateString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {memFormOpen && (
+            <div className="flex flex-col gap-2 mt-1">
+              <select
+                value={memCategory}
+                onChange={(e) => setMemCategory(e.target.value as MemoryEntry['category'])}
+                className="h-8 px-2 rounded-md border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {(['decision', 'convention', 'issue', 'note'] as MemoryEntry['category'][]).map((c) => (
+                  <option key={c} value={c}>
+                    {t(`project.stepPanel.memory.categories.${c}`)}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                value={memText}
+                onChange={(e) => setMemText(e.target.value)}
+                placeholder={t('project.stepPanel.memory.placeholder')}
+                rows={3}
+                className="w-full px-3 py-2 rounded-md border border-border bg-background text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              />
+              <div className="flex gap-1.5">
+                <button
+                  onClick={async () => {
+                    if (!memText.trim()) return;
+                    await onAddMemory(memCategory, memText);
+                    setMemText('');
+                    setMemFormOpen(false);
+                  }}
+                  disabled={!memText.trim() || addingMemory}
+                  className="text-[11px] font-medium px-3 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {t('project.stepPanel.memory.save')}
+                </button>
+                <button
+                  onClick={() => { setMemFormOpen(false); setMemText(''); }}
+                  className="text-[11px] font-medium px-3 py-1 rounded border border-border text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  {t('project.stepPanel.memory.cancel')}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

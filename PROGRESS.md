@@ -1,5 +1,17 @@
 # PlanGraph — Build Progress
 
+## Session 10 — Settings Page + Memory Panel
+- **Completed:** 2026-04-26T02:00:00Z
+- **Files added/modified:** 6
+- **Key outcomes:**
+  - `src/components/plangraph/AppShell.tsx` — gear icon now navigates to `/settings` (changed `<button>` to `<Link href="/settings">`)
+  - `src/app/settings/page.tsx` — full profile-editing page: skill level (radio-style), languages (preset chips + custom input), executor tools (multi-select chips), communication style, preferred locale; saves via `POST /api/profile`; shows "Saved!" confirmation; redirect to `/onboarding` if no profile exists; RTL-aware
+  - `src/app/api/projects/[id]/memory/route.ts` — `GET` returns `project.memory`; `POST` validates body, appends `MemoryEntry` to `project.memory[]`, writes project JSON, appends to `MEMORY.md` via `storage.appendMemory()`, writes `MEMORY_ADDED` audit entry
+  - `src/app/project/[id]/page.tsx` — step detail panel gains a **Memory** section: lists existing step-scoped entries with category badge (decision/purple, convention/blue, issue/red, note/gray) + date; "Add note" button reveals inline form (category select + textarea); `handleAddMemory` callback POSTs to `/api/projects/[id]/memory` and merges the returned entry into local project state without reload
+  - `src/lib/i18n/translations/en.json` + `ar.json` — added `settings.*` namespace (title, all field labels, save states, skill/comm/locale label maps) and `project.stepPanel.memory.*` namespace (title, empty, addNote, cancel, save, placeholder, categories)
+  - `npm run build` succeeds cleanly; 103/103 tests pass
+- **Notes:** Memory entries are scoped to individual steps (filtered by `stepId` in the panel). They are stored in two places: the project JSON (`project.memory[]`) for fast UI reads, and `MEMORY.md` for a human-readable developer log.
+
 ## Session 9 — Step Execution & Project List
 - **Completed:** 2026-04-26T01:00:00Z
 - **Files added/modified:** 6

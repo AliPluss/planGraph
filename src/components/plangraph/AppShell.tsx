@@ -13,12 +13,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-1">
           <LocaleToggle />
-          <button
+          <Link
+            href="/settings"
             aria-label="Settings"
             className="inline-flex items-center justify-center size-8 rounded-md hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Settings className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </header>
       <main className="flex-1">{children}</main>

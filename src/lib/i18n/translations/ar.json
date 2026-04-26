@@ -84,6 +84,20 @@
         "reopen": "أعد الفتح",
         "review": "تحتاج مراجعة"
       },
+      "memory": {
+        "title": "الذاكرة",
+        "empty": "لا توجد ملاحظات لهذه الخطوة بعد.",
+        "addNote": "إضافة ملاحظة",
+        "cancel": "إلغاء",
+        "save": "حفظ الملاحظة",
+        "placeholder": "صف القرار أو الاتفاقية أو المشكلة...",
+        "categories": {
+          "decision": "قرار",
+          "convention": "اتفاقية",
+          "issue": "مشكلة",
+          "note": "ملاحظة"
+        }
+      },
       "status": {
         "not_started": "لم تبدأ",
         "ready": "جاهزة",
@@ -93,6 +107,31 @@
         "needs_review": "تحتاج مراجعة",
         "blocked": "محجوبة"
       }
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "skillLevel": "مستوى الخبرة",
+    "executorTools": "أدوات التنفيذ",
+    "communicationStyle": "أسلوب التواصل",
+    "preferredLocale": "اللغة المفضلة",
+    "languages": "اللغات والأدوات",
+    "addLanguage": "أضف لغة...",
+    "save": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ...",
+    "saved": "تم الحفظ!",
+    "skillLabels": {
+      "beginner": "مبتدئ — لم أُنجز مشروعاً كاملاً بعد",
+      "intermediate": "متوسط — أنجزت مشاريع بسيطة",
+      "advanced": "متقدم — أعمل في مجال البرمجة احترافياً"
+    },
+    "commLabels": {
+      "detailed": "مفصّل — شروحات كاملة",
+      "concise": "مختصر — الأساسيات فقط"
+    },
+    "localeLabels": {
+      "en": "English",
+      "ar": "العربية"
     }
   },
   "generate": {

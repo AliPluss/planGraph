@@ -84,6 +84,20 @@
         "reopen": "Reopen",
         "review": "Needs review"
       },
+      "memory": {
+        "title": "Memory",
+        "empty": "No notes for this step yet.",
+        "addNote": "Add note",
+        "cancel": "Cancel",
+        "save": "Save note",
+        "placeholder": "Describe the decision, convention, or issue...",
+        "categories": {
+          "decision": "Decision",
+          "convention": "Convention",
+          "issue": "Issue",
+          "note": "Note"
+        }
+      },
       "status": {
         "not_started": "Not started",
         "ready": "Ready",
@@ -93,6 +107,31 @@
         "needs_review": "Needs review",
         "blocked": "Blocked"
       }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "skillLevel": "Experience level",
+    "executorTools": "Executor tools",
+    "communicationStyle": "Communication style",
+    "preferredLocale": "Preferred language",
+    "languages": "Languages & tools",
+    "addLanguage": "Add language...",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "skillLabels": {
+      "beginner": "Beginner — I haven't built a complete project yet",
+      "intermediate": "Intermediate — I've built simple projects",
+      "advanced": "Advanced — I work in software professionally"
+    },
+    "commLabels": {
+      "detailed": "Detailed — full explanations",
+      "concise": "Concise — essentials only"
+    },
+    "localeLabels": {
+      "en": "English",
+      "ar": "العربية"
     }
   },
   "generate": {
