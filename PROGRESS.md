@@ -1,5 +1,18 @@
 # PlanGraph — Build Progress
 
+## Recovery Sync — Sessions 8–12
+- **Completed:** 2026-04-28T17:27:42+02:00
+- **Scope:** Audited actual repository state against `PLANGRAPH_BUILD_PROMPTS.md` Sessions 8–12, repaired only missing/weak gaps, and preserved accepted path/architecture divergences.
+- **Sessions repaired:**
+  - Session 8 — completed plan generator gaps in existing `src/core/plan-builder` architecture: exported topo helper, richer executor-aware prompts, template protected files carried into generated steps.
+  - Session 9 — completed markdown writer gaps: richer `OVERVIEW.md`, protected files/status sections, and all executor prompt variants in step markdown while preserving `/api/projects` flow.
+  - Session 10 — completed workspace shell gaps: added `/project` index and PATCH support for `/api/projects/[id]` so existing `ExecutorSelector` persists correctly.
+  - Session 11 — extracted graph into `src/components/plangraph/graph/*`, added synthetic root/delivery nodes, and switched to vertical dagre layout.
+  - Session 12 — extracted step details into `src/components/plangraph/step/StepDetails.tsx`, added Overview/Markdown/Prompts/Status tabs, and added scoped markdown read route.
+- **Verification:** `npm run test` passes (127/127). `npm run build` passes on Next.js 16.2.4.
+- **Counter:** `.current-session` synced to `13`.
+- **Notes:** Build still reports the existing Turbopack NFT tracing warning from storage path usage in app routes; it is a warning, not a failed build.
+
 ## Session 12 — Claude Code Adapter + Report Parser
 - **Completed:** 2026-04-26T04:00:00Z
 - **Files added/modified:** 11
