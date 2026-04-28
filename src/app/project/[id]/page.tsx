@@ -7,6 +7,7 @@ import '@/lib/i18n/i18n';
 import { ArrowLeft, X, Copy, Check, Play, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { GraphCanvas } from '@/components/plangraph/graph/GraphCanvas';
+import { StepDetails } from '@/components/plangraph/step/StepDetails';
 import type { Project, Step, StepStatus, MemoryEntry, ReportSummary } from '@/core/types';
 
 interface RunResult {
@@ -262,7 +263,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         />
 
         {selectedStep && (
-          <StepDetailPanel
+          <StepDetails
+            projectId={id}
             step={selectedStep}
             locale={locale}
             executor={project.meta.selectedExecutor}
