@@ -11,7 +11,8 @@ import { GraphCanvas } from '@/components/plangraph/graph/GraphCanvas';
 import { StepDetails } from '@/components/plangraph/step/StepDetails';
 import { ExecutorSelector } from '@/components/plangraph/ExecutorSelector';
 import { LiveOutputDrawer } from '@/components/plangraph/run/LiveOutputDrawer';
-import type { ExecutorTool, Project, Step, StepStatus, MemoryEntry, ReportSummary } from '@/core/types';
+import { ValidationReportModal } from '@/components/plangraph/validation/ValidationReportModal';
+import type { ExecutorTool, Project, Step, StepStatus, MemoryEntry, ReportSummary, ValidationReport } from '@/core/types';
 
 interface RunResult {
   instructions: string;
@@ -48,6 +49,11 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [runMode, setRunMode] = useState<RunMode>('open-terminal');
   const [liveRun, setLiveRun] = useState<{ handleId: string; stepTitle: string } | null>(null);
   const [claudeMissing, setClaudeMissing] = useState(false);
+  const [validationReview, setValidationReview] = useState<{
+    stepId: string;
+    stepTitle: string;
+    report: ValidationReport;
+  } | null>(null);
   // Banner shown when a report is detected via SSE
   const [completedStep, setCompletedStep] = useState<string | null>(null);
 
@@ -128,15 +134,23 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
               projectId: id,
               stepId: msg.stepId,
               content: msg.contents ?? '',
+              reportSummary: msg.reportSummary,
             }),
           })
-            .then((r) => r.json() as Promise<{ data?: Project }>)
+            .then((r) => r.json() as Promise<{ data?: Project; validationReport?: ValidationReport }>)
             .then((json) => {
               if (json.data) {
                 setProject(json.data);
                 const completed = json.data.steps.find((s) => s.id === msg.stepId);
                 const next = findNextStep(json.data, msg.stepId!);
                 setSelectedStep(next ?? completed ?? null);
+                if (json.validationReport && !json.validationReport.passed && completed) {
+                  setValidationReview({
+                    stepId: completed.id,
+                    stepTitle: completed.title,
+                    report: json.validationReport,
+                  });
+                }
               }
               setCompletedStep(msg.stepId!);
               setTimeout(() => setCompletedStep(null), 4000);
@@ -333,6 +347,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         >
           Memory
         </Link>
+        <Link
+          href={`/project/${id}/audit`}
+          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          Audit
+        </Link>
         <ExecutorSelector
           projectId={id}
           value={project.meta.selectedExecutor}
@@ -457,6 +477,21 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           }}
           saving={updating || addingMemory}
           t={t}
+        />
+      )}
+
+      {validationReview && (
+        <ValidationReportModal
+          open
+          report={validationReview.report}
+          stepTitle={validationReview.stepTitle}
+          working={updating}
+          onKeepReview={() => setValidationReview(null)}
+          onMarkDone={() => {
+            const stepId = validationReview.stepId;
+            setValidationReview(null);
+            void applyStatusChange(stepId, 'done');
+          }}
         />
       )}
     </div>

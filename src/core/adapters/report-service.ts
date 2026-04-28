@@ -5,7 +5,9 @@ import { inputSanitizer } from '../security/input-sanitizer';
 import { pathGuard } from '../security/path-guard';
 import { storage } from '../storage/storage';
 import { getProjectDir } from '../storage/paths';
-import type { Project, ReportSummary } from '../types';
+import { SnapshotManager } from '../snapshots/snapshot-manager';
+import { StepValidator } from '../validation/step-validator';
+import type { Project, ReportSummary, ValidationReport } from '../types';
 
 const writer = new SafeWriter();
 
@@ -14,7 +16,7 @@ export async function completeStepFromReport(
   stepId: string,
   content: string,
   reportSummary?: ReportSummary,
-): Promise<Project> {
+): Promise<{ project: Project; validationReport?: ValidationReport }> {
   const project = await storage.readProject(projectId);
   if (!project) throw new Error('Project not found');
 
@@ -41,7 +43,25 @@ export async function completeStepFromReport(
     startedAt: project.steps[stepIndex].startedAt ?? now,
   };
 
-  if (nextStatus === 'done') {
+  project.meta.updatedAt = now;
+  let validationReport: ValidationReport | undefined;
+  if (nextStatus === 'done' && project.steps[stepIndex].snapshotBefore) {
+    const snapshotManager = new SnapshotManager(projectRoot);
+    const validator = new StepValidator(projectRoot, snapshotManager);
+    validationReport = await validator.validate(
+      project.steps[stepIndex],
+      project.steps[stepIndex].snapshotBefore,
+      { projectProtectedFiles: project.meta.protectedFiles },
+    );
+
+    project.steps[stepIndex] = {
+      ...project.steps[stepIndex],
+      status: validationReport.passed ? 'done' : 'needs_review',
+      validationReport,
+    };
+  }
+
+  if (project.steps[stepIndex].status === 'done') {
     const doneIds = new Set(project.steps.filter((step) => step.status === 'done').map((step) => step.id));
     for (let i = 0; i < project.steps.length; i++) {
       const step = project.steps[i];
@@ -53,7 +73,6 @@ export async function completeStepFromReport(
     }
   }
 
-  project.meta.updatedAt = now;
   await storage.writeProject(project);
 
   await storage.appendAudit(
@@ -62,20 +81,24 @@ export async function completeStepFromReport(
       action: 'REPORT_DETECTED',
       projectId,
       stepId,
-      details: { reportFile: relativeReportFile },
+      details: { reportFile: relativeReportFile, validationPassed: validationReport?.passed },
     },
     projectId,
   );
   await storage.appendAudit(
     {
       timestamp: now,
-      action: nextStatus === 'failed' ? 'STEP_FAILED' : 'STEP_COMPLETED',
+      action: project.steps[stepIndex].status === 'failed' ? 'STEP_FAILED' : 'STEP_COMPLETED',
       projectId,
       stepId,
-      details: { status: nextStatus, reportFile: relativeReportFile },
+      details: {
+        status: project.steps[stepIndex].status,
+        reportFile: relativeReportFile,
+        validationSummary: validationReport?.summary,
+      },
     },
     projectId,
   );
 
-  return project;
+  return { project, validationReport };
 }

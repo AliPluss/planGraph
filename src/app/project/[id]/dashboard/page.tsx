@@ -101,6 +101,12 @@ export default async function ProjectDashboardPage({
             <ArrowLeft className="size-4" />
             Workspace
           </Link>
+          <Link
+            href={`/project/${id}/audit`}
+            className="mb-3 ms-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Audit
+          </Link>
           <h1 className="text-2xl font-semibold tracking-tight">{project.meta.name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="capitalize">

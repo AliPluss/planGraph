@@ -1,5 +1,15 @@
 # PlanGraph — Build Progress
 
+## Session 19 — Step validation + audit
+- **Completed:** 2026-04-28T22:45:12.3531214+02:00
+- **Files added/modified:** 17
+- **Key outcomes:**
+  - Added `StepValidator` with protected-file checks, secret scanning, report presence checks, and optional build-script validation.
+  - Wired watcher-driven report completion through validation so failed checks downgrade a completed step to `needs_review`.
+  - Added a validation review modal with "Mark step Done anyway" and "Keep as Needs Review" actions.
+  - Added a sanitized per-project audit log page with action/step filters and JSON export.
+- **Notes:** `npm run test` passes (133/133). `npm run build` passes. Both commands needed `npm.cmd`; sandboxed runs hit Windows spawn restrictions. Untracked `docs/vision/` files were left untouched and uncommitted.
+
 ## Session 18 — Snapshots + rollback
 - **Completed:** 2026-04-28T22:33:12.5790862+02:00
 - **Files added/modified:** 12

@@ -69,6 +69,7 @@ export interface Step {
     durationMs: number;
   };
   snapshotBefore?: string;
+  validationReport?: ValidationReport;
 }
 
 export interface Edge {
@@ -100,6 +101,7 @@ export interface ProjectMeta {
   updatedAt: string;
   selectedExecutor: ExecutorTool;
   autoSnapshot?: boolean;
+  protectedFiles?: string[];
 }
 
 export interface Project {
@@ -130,4 +132,15 @@ export interface ReportSummary {
   summary: string;
   durationMs: number;
   exitCode: number;
+}
+
+export interface ValidationReport {
+  passed: boolean;
+  checks: {
+    protectedFiles: { passed: boolean; violations: string[] };
+    secretLeaks: { passed: boolean; matches: { file: string; pattern: string }[] };
+    buildStillWorks: { ran: boolean; passed: boolean; output?: string };
+    reportPresent: { passed: boolean; path?: string };
+  };
+  summary: string;
 }

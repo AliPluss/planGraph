@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import process from "process";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 interface CommandOptions {
@@ -8,6 +9,13 @@ interface CommandOptions {
 
 export class SafeCommandRunner {
   private allowedCommands = ["git", "npm", "node", "claude", "cursor", "code"];
+
+  private resolveExecutable(command: string): string {
+    if (process.platform === "win32" && command === "npm") {
+      return "npm.cmd";
+    }
+    return command;
+  }
 
   async run(
     command: string,
@@ -22,7 +30,7 @@ export class SafeCommandRunner {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { cwd, shell: false });
+      const child = spawn(this.resolveExecutable(command), args, { cwd, shell: false });
       let stdout = "";
       let stderr = "";
       let timedOut = false;
@@ -70,7 +78,7 @@ export class SafeCommandRunner {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { cwd, shell: false });
+      const child = spawn(this.resolveExecutable(command), args, { cwd, shell: false });
       let fullStdout = "";
       let stderr = "";
       let timedOut = false;
