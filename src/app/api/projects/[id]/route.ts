@@ -22,7 +22,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const body = await req.json() as { selectedExecutor?: ExecutorTool; name?: string };
+    const body = await req.json() as {
+      selectedExecutor?: ExecutorTool;
+      name?: string;
+      autoSnapshot?: boolean;
+    };
     const project = await storage.readProject(id);
 
     if (!project) {
@@ -42,6 +46,10 @@ export async function PATCH(
         return NextResponse.json({ error: 'Project name cannot be empty' }, { status: 422 });
       }
       project.meta.name = name.slice(0, 100);
+    }
+
+    if (body.autoSnapshot !== undefined) {
+      project.meta.autoSnapshot = body.autoSnapshot;
     }
 
     project.meta.updatedAt = new Date().toISOString();

@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SnapshotPanel } from '@/components/plangraph/dashboard/SnapshotPanel';
 import {
   getCurrentStep,
   getProgress,
@@ -120,72 +122,87 @@ export default async function ProjectDashboardPage({
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<FileText className="size-4" />} label="Files changed" value={stats.filesChanged?.toString() ?? '—'} />
-        <MetricCard icon={<Clock className="size-4" />} label="Time spent" value={formatDuration(stats.totalDurationMs)} />
-        <MetricCard icon={<WalletCards className="size-4" />} label="Tokens used" value={stats.tokensUsed?.toLocaleString() ?? '—'} />
-        <MetricCard icon={<GitBranch className="size-4" />} label="Snapshots" value={snapshotCount.toString()} />
-      </div>
-
-      <Card className="rounded-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Status distribution</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex h-4 overflow-hidden rounded-full bg-muted">
-            {(Object.keys(distribution) as StepStatus[]).map((status) => {
-              const count = distribution[status];
-              if (count === 0 || progress.total === 0) return null;
-              return (
-                <div
-                  key={status}
-                  className={STATUS_COLORS[status]}
-                  style={{ width: `${(count / progress.total) * 100}%` }}
-                  title={`${STATUS_LABELS[status]}: ${count}`}
-                />
-              );
-            })}
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="snapshots">Snapshots</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="m-0 space-y-6">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard icon={<FileText className="size-4" />} label="Files changed" value={stats.filesChanged?.toString() ?? '—'} />
+            <MetricCard icon={<Clock className="size-4" />} label="Time spent" value={formatDuration(stats.totalDurationMs)} />
+            <MetricCard icon={<WalletCards className="size-4" />} label="Tokens used" value={stats.tokensUsed?.toLocaleString() ?? '—'} />
+            <MetricCard icon={<GitBranch className="size-4" />} label="Snapshots" value={snapshotCount.toString()} />
           </div>
-          <div className="flex flex-wrap gap-3">
-            {(Object.keys(distribution) as StepStatus[]).map((status) => (
-              <div key={status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className={`size-2 rounded-full ${STATUS_COLORS[status]}`} />
-                {STATUS_LABELS[status]}: {distribution[status]}
+
+          <Card className="rounded-lg">
+            <CardHeader>
+              <CardTitle className="text-base">Status distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex h-4 overflow-hidden rounded-full bg-muted">
+                {(Object.keys(distribution) as StepStatus[]).map((status) => {
+                  const count = distribution[status];
+                  if (count === 0 || progress.total === 0) return null;
+                  return (
+                    <div
+                      key={status}
+                      className={STATUS_COLORS[status]}
+                      style={{ width: `${(count / progress.total) * 100}%` }}
+                      title={`${STATUS_LABELS[status]}: ${count}`}
+                    />
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Recent activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {auditEntries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No audit entries yet.</p>
-          ) : (
-            <ol className="space-y-3">
-              {auditEntries.map((entry, index) => (
-                <li key={`${entry.timestamp}-${index}`} className="rounded-md border px-3 py-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-medium">{entry.action.replace(/_/g, ' ')}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(entry.timestamp).toLocaleString()}
-                    </span>
+              <div className="flex flex-wrap gap-3">
+                {(Object.keys(distribution) as StepStatus[]).map((status) => (
+                  <div key={status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className={`size-2 rounded-full ${STATUS_COLORS[status]}`} />
+                    {STATUS_LABELS[status]}: {distribution[status]}
                   </div>
-                  {(entry.stepId || entry.details) && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {entry.stepId ? `Step: ${entry.stepId}` : ''}
-                      {entry.details?.status ? ` Status: ${String(entry.details.status)}` : ''}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-lg">
+            <CardHeader>
+              <CardTitle className="text-base">Recent activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {auditEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No audit entries yet.</p>
+              ) : (
+                <ol className="space-y-3">
+                  {auditEntries.map((entry, index) => (
+                    <li key={`${entry.timestamp}-${index}`} className="rounded-md border px-3 py-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-medium">{entry.action.replace(/_/g, ' ')}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(entry.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      {(entry.stepId || entry.details) && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {entry.stepId ? `Step: ${entry.stepId}` : ''}
+                          {entry.details?.status ? ` Status: ${String(entry.details.status)}` : ''}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="snapshots" className="m-0">
+          <SnapshotPanel
+            projectId={id}
+            projectName={project.meta.name}
+            autoSnapshot={project.meta.autoSnapshot !== false}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { storage } from '@/core/storage/storage';
 import { getProjectDir } from '@/core/storage/paths';
 import { getAdapter } from '@/core/adapters/registry';
 import { buildRichPrompt } from '@/core/markdown/md-writer';
+import { SnapshotManager } from '@/core/snapshots/snapshot-manager';
 import type { ExecutorTool } from '@/core/types';
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -53,6 +54,30 @@ export async function POST(req: Request, { params }: RouteParams) {
     const ctx = { projectId: id, project, step: project.steps[stepIndex], promptText, projectRoot, storage };
     const result = await adapter.prepare(ctx);
 
+    let snapshotTag: string | undefined;
+    if (project.meta.autoSnapshot !== false) {
+      const snapshotManager = new SnapshotManager(projectRoot);
+      const snapshot = await snapshotManager.snapshot(`before-${step.id}`);
+      snapshotTag = snapshot.tag;
+      project.steps[stepIndex] = {
+        ...project.steps[stepIndex],
+        snapshotBefore: snapshot.tag,
+      };
+      project.meta.autoSnapshot = true;
+      project.meta.updatedAt = new Date().toISOString();
+      await storage.writeProject(project);
+      await storage.appendAudit(
+        {
+          timestamp: project.meta.updatedAt,
+          action: 'SNAPSHOT_CREATED',
+          projectId: id,
+          stepId: body.stepId,
+          details: { tag: snapshot.tag },
+        },
+        id,
+      );
+    }
+
     if (executor === 'claude-code' && body.mode === 'subprocess' && adapter.run) {
       const handle = await adapter.run(ctx);
       result.autoRunning = true;
@@ -94,6 +119,7 @@ export async function POST(req: Request, { params }: RouteParams) {
         executor: adapter.displayName,
         autoRunning: result.autoRunning ?? false,
         handleId: result.handleId,
+        snapshotTag,
         project,
       },
     });

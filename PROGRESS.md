@@ -1,5 +1,15 @@
 # PlanGraph — Build Progress
 
+## Session 18 — Snapshots + rollback
+- **Completed:** 2026-04-28T22:33:12.5790862+02:00
+- **Files added/modified:** 12
+- **Key outcomes:**
+  - Added `SnapshotManager` with git repo initialization, local snapshot commits, `plangraph/*` tags, diff output, and confirmed rollback.
+  - Hooked auto-snapshot creation into the step run lifecycle and records `snapshotBefore` plus snapshot audit entries.
+  - Added snapshot list, diff, rollback, and auto-snapshot setting APIs.
+  - Added the project dashboard Snapshots tab with rollback confirmation and the per-project auto-snapshot toggle.
+- **Notes:** `npm run test` passes (131/131). `npm run build` passes. Both commands needed `npm.cmd`; sandboxed runs hit Windows execution-policy or spawn restrictions. Removed `next/font/google` so builds remain local-only. Untracked `docs/vision/` files were left untouched and uncommitted.
+
 ## Session 15 — Claude Code adapter
 - **Completed:** 2026-04-28T17:53:36+02:00
 - **Files added/modified:** 11

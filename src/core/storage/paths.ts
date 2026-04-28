@@ -3,7 +3,7 @@ import { pathGuard } from "../security/path-guard";
 
 function repoRoot(): string {
   // Walk up from __dirname to find the project root (where package.json lives)
-  return path.resolve(process.cwd());
+  return path.resolve(/*turbopackIgnore: true*/ process.cwd());
 }
 
 export function getWorkspaceRoot(): string {
