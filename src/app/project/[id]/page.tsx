@@ -4,22 +4,10 @@ import { use, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n/i18n';
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Controls,
-  MiniMap,
-  type Node as RFNode,
-  type Edge as RFEdge,
-  type NodeTypes,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
 import { ArrowLeft, X, Copy, Check, Play, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import StepNode, { type StepNodeData } from '@/components/plangraph/StepNode';
+import { GraphCanvas } from '@/components/plangraph/graph/GraphCanvas';
 import type { Project, Step, StepStatus, MemoryEntry, ReportSummary } from '@/core/types';
-
-const nodeTypes: NodeTypes = { stepNode: StepNode };
 
 interface RunResult {
   instructions: string;
@@ -161,15 +149,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     [id, project, runLoading],
   );
 
-  const handleNodeClick = useCallback(
-    (_: React.MouseEvent, rfNode: RFNode<StepNodeData>) => {
-      setSelectedStep(rfNode.data.step);
-    },
-    [],
-  );
-
-  const handlePaneClick = useCallback(() => setSelectedStep(null), []);
-
   const handleStatusChange = useCallback(
     async (stepId: string, status: StepStatus) => {
       if (!project || updating) return;
@@ -241,22 +220,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     ? Math.round((doneCount / project.steps.length) * 100)
     : 0;
 
-  const rfNodes: RFNode<StepNodeData>[] = project.steps.map((step) => ({
-    id: step.id,
-    type: 'stepNode',
-    position: step.position ?? { x: 0, y: 0 },
-    data: { step, locale },
-    selected: selectedStep?.id === step.id,
-  }));
-
-  const rfEdges: RFEdge[] = project.edges.map((e) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    type: 'smoothstep',
-    style: { stroke: 'var(--border)', strokeWidth: 1.5 },
-  }));
-
   return (
     <div className="flex flex-col" style={{ height: 'calc(100dvh - 3.5rem)' }}>
       {/* Project header bar */}
@@ -291,34 +254,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
       {/* Graph + detail panel */}
       <div className="flex-1 relative overflow-hidden">
-        <ReactFlow
-          nodes={rfNodes}
-          edges={rfEdges}
-          nodeTypes={nodeTypes}
-          onNodeClick={handleNodeClick}
-          onPaneClick={handlePaneClick}
-          fitView
-          fitViewOptions={{ padding: 0.3 }}
-          minZoom={0.2}
-          maxZoom={2}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--border)" />
-          <Controls showInteractive={false} />
-          <MiniMap
-            nodeColor={(n) => {
-              const step = (n.data as StepNodeData | undefined)?.step;
-              if (!step) return '#e5e7eb';
-              const map: Record<string, string> = {
-                planning: '#a855f7', setup: '#3b82f6', implementation: '#10b981',
-                integration: '#06b6d4', verification: '#f59e0b', delivery: '#6366f1',
-              };
-              return map[step.type] ?? '#e5e7eb';
-            }}
-            maskColor="rgba(0,0,0,0.06)"
-            style={{ borderRadius: 8, border: '1px solid var(--border)' }}
-          />
-        </ReactFlow>
+        <GraphCanvas
+          project={project}
+          selectedStep={selectedStep}
+          locale={locale}
+          onSelectStep={setSelectedStep}
+        />
 
         {selectedStep && (
           <StepDetailPanel
