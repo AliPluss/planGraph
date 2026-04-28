@@ -15,7 +15,12 @@ export const claudeCodeAdapter: ExecutorAdapter = {
 
   async prepare(ctx: ExecutionContext): Promise<ExecutionResult> {
     const { project, step, projectRoot } = ctx;
-    const promptText = buildRichPrompt(step, project, 'claude-code');
+    const promptText = buildRichPrompt(
+      step,
+      project,
+      'claude-code',
+      await ctx.storage?.readMemory(ctx.projectId),
+    );
     const plangraphDir = path.join(projectRoot, '.plangraph');
     const promptFile = path.join(plangraphDir, 'PROMPT.md');
 
@@ -38,7 +43,12 @@ export const claudeCodeAdapter: ExecutorAdapter = {
 
   async executeAsync(ctx: ExecutionContext): Promise<void> {
     const { project, step, projectRoot } = ctx;
-    const promptText = buildRichPrompt(step, project, 'claude-code');
+    const promptText = buildRichPrompt(
+      step,
+      project,
+      'claude-code',
+      await ctx.storage?.readMemory(ctx.projectId),
+    );
     const reportsDir = path.join(projectRoot, 'reports');
     const reportFile = path.join(reportsDir, `${step.id}_report.md`);
 

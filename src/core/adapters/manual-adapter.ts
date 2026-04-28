@@ -13,7 +13,12 @@ export const manualAdapter: ExecutorAdapter = {
 
   async prepare(ctx: ExecutionContext): Promise<ExecutionResult> {
     const { project, step, projectRoot } = ctx;
-    const promptText = buildRichPrompt(step, project, 'manual');
+    const promptText = buildRichPrompt(
+      step,
+      project,
+      'manual',
+      await ctx.storage?.readMemory(ctx.projectId),
+    );
     const plangraphDir = path.join(projectRoot, '.plangraph');
     const promptFile = path.join(plangraphDir, 'PROMPT.md');
 

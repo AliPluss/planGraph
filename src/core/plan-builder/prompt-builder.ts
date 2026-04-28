@@ -6,15 +6,25 @@ export function buildPromptsForStep(
   step: Step,
   project: PromptProject,
   profile?: Pick<UserProfile, 'communicationStyle' | 'languages'>,
+  memoryContent?: string,
 ): ToolPrompts {
-  const manual = buildManualPrompt(step, project, profile);
+  const manual = withRecentMemory(buildManualPrompt(step, project, profile), memoryContent);
   return {
     manual,
     claudeCode: buildClaudeCodePrompt(step, project, manual),
-    cursor: buildCursorPrompt(step, project),
-    antigravity: buildAntigravityPrompt(step, project),
-    copilot: buildCopilotPrompt(step, project),
+    cursor: withRecentMemory(buildCursorPrompt(step, project), memoryContent),
+    antigravity: withRecentMemory(buildAntigravityPrompt(step, project), memoryContent),
+    copilot: withRecentMemory(buildCopilotPrompt(step, project), memoryContent),
   };
+}
+
+export function withRecentMemory(prompt: string, memoryContent?: string): string {
+  const trimmed = memoryContent?.trim();
+  if (!trimmed) return prompt;
+  const capped = trimmed.length > 3000
+    ? `${trimmed.slice(0, 3000)}\n\n...see MEMORY.md for full context`
+    : trimmed;
+  return `## Recent project memory\n${capped}\n\n${prompt}`;
 }
 
 function buildManualPrompt(

@@ -1,5 +1,15 @@
 # PlanGraph — Build Progress
 
+## Session 13 — Memory Bank system
+- **Completed:** 2026-04-28T17:37:18+02:00
+- **Files added/modified:** 16
+- **Key outcomes:**
+  - Added `MemoryManager` with structured Decisions, Conventions, Issues, File Map, and Notes rendering for `MEMORY.md`.
+  - Added `/api/memory` plus updated scoped project memory writes so sanitized entries update both `project.json` and `MEMORY.md`.
+  - Added `/project/[id]/memory` with rendered Markdown tabs and an add-entry dialog.
+  - Added step-completion decision capture and latest memory injection into executor prompts, capped at 3000 characters.
+- **Notes:** `npm run test` passes (127/127). `npm run build` passes; the pre-existing Turbopack NFT tracing warning remains.
+
 ## Recovery Sync — Sessions 8–12
 - **Completed:** 2026-04-28T17:27:42+02:00
 - **Scope:** Audited actual repository state against `PLANGRAPH_BUILD_PROMPTS.md` Sessions 8–12, repaired only missing/weak gaps, and preserved accepted path/architecture divergences.

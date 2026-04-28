@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { SafeWriter } from '../security/safe-writer';
+import { withRecentMemory } from '../plan-builder/prompt-builder';
 import type { Project, Step } from '../types';
 import {
   getProjectDir,
@@ -184,9 +185,10 @@ _(populated after execution)_
 `;
 }
 
-export function buildRichPrompt(step: Step, project: Project, executor: string): string {
+export function buildRichPrompt(step: Step, project: Project, executor: string, memoryContent?: string): string {
   const key = executor === 'claude-code' ? 'claudeCode' : executor;
-  return step.prompts[key as keyof typeof step.prompts] ?? step.prompts.manual;
+  const prompt = step.prompts[key as keyof typeof step.prompts] ?? step.prompts.manual;
+  return withRecentMemory(prompt, memoryContent);
 }
 
 function formatExecutor(e: string): string {

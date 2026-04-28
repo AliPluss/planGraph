@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     const adapter = getAdapter(executor);
     const projectRoot = getProjectDir(id);
 
-    const ctx = { projectId: id, project, step, projectRoot };
+    const ctx = { projectId: id, project, step, projectRoot, storage };
     const result = await adapter.prepare(ctx);
 
     // Fire-and-forget for adapters that support auto-execution

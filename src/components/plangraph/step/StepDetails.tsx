@@ -22,6 +22,7 @@ const MEMORY_CATEGORY_CLASS: Record<MemoryEntry['category'], string> = {
   decision:   'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
   convention: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   issue:      'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  'file-map':  'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
   note:       'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
 };
 
@@ -316,7 +317,7 @@ function StatusTab({
   t: StepDetailsProps['t'];
 }) {
   const [memFormOpen, setMemFormOpen] = useState(false);
-  const [memCategory, setMemCategory] = useState<MemoryEntry['category']>('note');
+  const [memCategory, setMemCategory] = useState<MemoryEntry['category']>('decision');
   const [memText, setMemText] = useState('');
 
   return (

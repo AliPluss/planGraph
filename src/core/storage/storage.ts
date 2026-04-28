@@ -72,9 +72,10 @@ export class Storage {
   async appendMemory(projectId: string, entry: MemoryEntry): Promise<void> {
     const existing = await this.readMemory(projectId);
     const sectionMap: Record<string, string> = {
-      decision: "## Decisions Made",
+      decision: "## Decisions",
       convention: "## Conventions",
-      issue: "## Known Issues",
+      issue: "## Issues",
+      "file-map": "## File Map",
       note: "## Notes",
     };
     const section = sectionMap[entry.category] ?? "## Notes";

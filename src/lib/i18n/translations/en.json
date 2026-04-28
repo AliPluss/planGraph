@@ -95,6 +95,7 @@
           "decision": "Decision",
           "convention": "Convention",
           "issue": "Issue",
+          "file-map": "File map",
           "note": "Note"
         }
       },
@@ -151,6 +152,13 @@
     "reportSuccess": "Completed successfully",
     "reportError": "Completed with errors",
     "duration": "{{ms}}ms"
+  },
+  "memory": {
+    "rememberDecision": "Any decisions to remember?",
+    "rememberDecisionHint": "Optional. This is appended to MEMORY.md before the step is marked done.",
+    "decisionPlaceholder": "Example: We chose SQLite for local-first storage because...",
+    "skip": "Skip",
+    "saveAndDone": "Save and mark done"
   },
   "generate": {
     "dialogTitle": "Create project",

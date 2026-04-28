@@ -78,9 +78,11 @@ export interface Edge {
 
 export interface MemoryEntry {
   stepId: string;
-  category: 'decision' | 'convention' | 'issue' | 'note';
+  category: 'decision' | 'convention' | 'issue' | 'file-map' | 'note';
   text: string;
   createdAt: string;
+  status?: 'open' | 'resolved';
+  path?: string;
 }
 
 export interface ProjectMeta {

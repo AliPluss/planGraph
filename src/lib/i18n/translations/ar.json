@@ -95,6 +95,7 @@
           "decision": "قرار",
           "convention": "اتفاقية",
           "issue": "مشكلة",
+          "file-map": "خريطة الملفات",
           "note": "ملاحظة"
         }
       },
@@ -151,6 +152,13 @@
     "reportSuccess": "اكتمل بنجاح",
     "reportError": "اكتمل مع أخطاء",
     "duration": "{{ms}}ms"
+  },
+  "memory": {
+    "rememberDecision": "هل توجد قرارات يجب تذكرها؟",
+    "rememberDecisionHint": "اختياري. ستُضاف إلى MEMORY.md قبل تعليم الخطوة كمكتملة.",
+    "decisionPlaceholder": "مثال: اخترنا SQLite للتخزين المحلي لأن...",
+    "skip": "تخطي",
+    "saveAndDone": "حفظ وتعليمها مكتملة"
   },
   "generate": {
     "dialogTitle": "إنشاء مشروع",

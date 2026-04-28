@@ -1,4 +1,5 @@
 import type { Project, Step, ExecutorTool, ReportSummary } from '../types';
+import type { Storage } from '../storage/storage';
 
 export type { ReportSummary };
 
@@ -7,6 +8,7 @@ export interface ExecutionContext {
   project: Project;
   step: Step;
   projectRoot: string;  // workspace/projects/<id>
+  storage?: Storage;
 }
 
 export interface ExecutionResult {
