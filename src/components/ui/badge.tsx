@@ -9,16 +9,20 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+        default: "bg-[var(--pg-accent-purple)] text-primary-foreground [a]:hover:bg-[var(--pg-accent-purple)]/80",
         secondary:
           "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
         destructive:
-          "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+          "bg-[var(--pg-accent-danger)]/10 text-[var(--pg-accent-danger)] focus-visible:ring-[var(--pg-accent-danger)]/20 dark:bg-[var(--pg-accent-danger)]/20 dark:focus-visible:ring-[var(--pg-accent-danger)]/40 [a]:hover:bg-[var(--pg-accent-danger)]/20",
         outline:
           "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        blue: "bg-[var(--pg-accent-blue)]/12 text-[var(--pg-accent-blue)] ring-1 ring-[var(--pg-accent-blue)]/25 [a]:hover:bg-[var(--pg-accent-blue)]/18",
+        cyan: "bg-[var(--pg-accent-cyan)]/12 text-[var(--pg-accent-cyan)] ring-1 ring-[var(--pg-accent-cyan)]/25 [a]:hover:bg-[var(--pg-accent-cyan)]/18",
+        green: "bg-[var(--pg-accent-green)]/12 text-[var(--pg-accent-green)] ring-1 ring-[var(--pg-accent-green)]/25 [a]:hover:bg-[var(--pg-accent-green)]/18",
+        amber: "bg-[var(--pg-accent-amber)]/12 text-[var(--pg-accent-amber)] ring-1 ring-[var(--pg-accent-amber)]/25 [a]:hover:bg-[var(--pg-accent-amber)]/18",
       },
     },
     defaultVariants: {
