@@ -254,3 +254,13 @@
   - Added `/api/project` project-summary feed plus rename/delete support on existing project routes.
   - Added per-project dashboard with progress, status bar, bounded audit-log reading, recent activity, and project header navigation.
 - **Notes:** `npm run test` and `npm run build` passed via `npm.cmd` with approval; sandboxed attempts were blocked by Windows spawn/network restrictions. Existing untracked `docs/vision/` files were left untouched and uncommitted.
+
+## Session 20 — Project importer + final polish
+- **Completed:** 2026-04-28T22:54:16.9474749+02:00
+- **Files added/modified:** 10
+- **Key outcomes:**
+  - Added a bounded existing-project scanner that detects stack, package manager, present features, and remaining-work candidates.
+  - Added `/import` plus `/api/import` for scanning a local folder and creating a PlanGraph project focused on remaining work.
+  - Replaced the placeholder README, added MIT LICENSE, and documented all MVP sessions in CHANGELOG.md.
+  - Polished the home import card, locale-aware greeting, AppShell help dropdown, and final package scripts.
+- **Notes:** `npm run test` and `npm run build` passed via `npm.cmd` with approval; sandboxed attempts were blocked by Windows spawn restrictions. `lint` remains `eslint` because local Next.js 16 docs state `next lint` was removed. Existing untracked `docs/vision/` files were left untouched and uncommitted.

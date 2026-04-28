@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test --import tsx src/core/**/__tests__/*.test.ts"
+    "test": "node --test --import tsx \"src/**/__tests__/*.test.ts\"",
+    "audit": "npm audit"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

@@ -62,7 +62,10 @@ export default function Home() {
     );
   }
 
-  const greeting = profile?.displayName ? `Hi, ${profile.displayName}` : 'Hi, builder';
+  const isArabic = profile?.preferredLocale === 'ar';
+  const greeting = profile?.displayName
+    ? isArabic ? `مرحباً، ${profile.displayName}` : `Hi, ${profile.displayName}`
+    : isArabic ? 'مرحباً، أيها البنّاء' : 'Hi, builder';
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -70,7 +73,9 @@ export default function Home() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">{greeting}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Pick up current work or start a new executable plan.
+            {isArabic
+              ? 'تابع العمل الحالي أو ابدأ خطة تنفيذية جديدة.'
+              : 'Pick up current work or start a new executable plan.'}
           </p>
         </div>
 
@@ -98,8 +103,10 @@ export default function Home() {
                 <Plus className="size-5" />
               </span>
               <div>
-                <h2 className="text-base font-semibold">New project</h2>
-                <p className="text-sm text-muted-foreground">Create a fresh plan from an idea.</p>
+                <h2 className="text-base font-semibold">{isArabic ? 'مشروع جديد' : 'New project'}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {isArabic ? 'أنشئ خطة جديدة من فكرة.' : 'Create a fresh plan from an idea.'}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -112,8 +119,12 @@ export default function Home() {
                 <ArchiveRestore className="size-5" />
               </span>
               <div>
-                <h2 className="text-base font-semibold">Import existing</h2>
-                <p className="text-sm text-muted-foreground">Bring in an existing folder when import lands.</p>
+                <h2 className="text-base font-semibold">{isArabic ? 'استيراد مشروع قائم' : 'Import existing'}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {isArabic
+                    ? 'افحص مجلداً محلياً وأنشئ خطة لما تبقى.'
+                    : 'Scan a local folder and plan the remaining work.'}
+                </p>
               </div>
             </CardContent>
           </Card>
