@@ -17,7 +17,7 @@ export default function RootLayout({
     <html
       lang="en"
       dir="ltr"
-      className="h-full antialiased"
+      className="dark h-full antialiased"
     >
       <body className="min-h-full flex flex-col">
         <I18nProvider>
