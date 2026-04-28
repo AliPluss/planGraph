@@ -75,7 +75,7 @@ ${formatBullets(step.restrictions)}
 ${formatBullets(step.protectedFiles)}
 
 ## When done
-1. Write a brief report to: workspace/projects/${project.meta.id}/reports/${step.id}_report.md
+1. Write a brief report to: reports/${step.id}_report.md
    Include: what changed, files created/modified, tests run, and decisions worth remembering.
 2. Append new decisions to MEMORY.md under "Decisions Made" with [${step.id}] prefix.
 3. Stop. Do not start the next step.`;
@@ -111,7 +111,7 @@ ${formatCheckboxes(step.successCriteria)}
 Do not modify:
 ${formatBullets(step.protectedFiles)}
 
-When complete, write workspace/projects/${project.meta.id}/reports/${step.id}_report.md and stop.`;
+When complete, write reports/${step.id}_report.md and stop.`;
 }
 
 function buildAntigravityPrompt(step: Step, project: PromptProject): string {
@@ -133,7 +133,7 @@ Plan artifacts:
 - Protected files: ${step.protectedFiles.join(', ') || 'none'}
 - Restrictions: ${step.restrictions.join('; ') || 'none'}
 
-After execution, write workspace/projects/${project.meta.id}/reports/${step.id}_report.md with a concise report and stop.`;
+After execution, write reports/${step.id}_report.md with a concise report and stop.`;
 }
 
 function buildCopilotPrompt(step: Step, project: PromptProject): string {
@@ -151,7 +151,7 @@ ${formatBullets(step.restrictions)}
 Protected files:
 ${formatBullets(step.protectedFiles)}
 
-Write the completion report to workspace/projects/${project.meta.id}/reports/${step.id}_report.md.`;
+Write the completion report to reports/${step.id}_report.md.`;
 }
 
 function formatLibraries(step: Step): string {

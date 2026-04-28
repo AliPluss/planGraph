@@ -1,5 +1,15 @@
 # PlanGraph — Build Progress
 
+## Session 14 — Executor adapter base
+- **Completed:** 2026-04-28T17:44:39+02:00
+- **Files added/modified:** 12
+- **Key outcomes:**
+  - Added the Session 14 executor adapter contract, Manual adapter behavior, and a registry that reports unimplemented executors until later sessions.
+  - Added a PathGuard-scoped `ReportWatcher` plus SSE endpoints for report detection.
+  - Added `/api/run` and `/api/report`, with run/status audit events and report-driven step completion.
+  - Updated the project workspace so report events save `reportFile`, refresh project state, show completion feedback, and select the next executable step.
+- **Notes:** `npm run test` passes (127/127). `npm run build` passes; the existing Turbopack NFT tracing warning remains. Both commands needed `npm.cmd`; sandboxed test/build hit Windows script policy or network restrictions.
+
 ## Session 13 — Memory Bank system
 - **Completed:** 2026-04-28T17:37:18+02:00
 - **Files added/modified:** 16

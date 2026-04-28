@@ -80,6 +80,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         const msg = JSON.parse(e.data) as {
           stepId?: string;
           event?: string;
+          contents?: string;
           reportSummary?: ReportSummary;
         };
         if (msg.stepId && msg.event === 'report_detected') {
@@ -93,19 +94,22 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             );
           }
           // Use report exit status to determine step status
-          const newStatus = msg.reportSummary?.status === 'error' ? 'failed' : 'done';
-          void fetch(`/api/projects/${id}/steps/${msg.stepId}`, {
-            method: 'PATCH',
+          void fetch('/api/report', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus }),
+            body: JSON.stringify({
+              projectId: id,
+              stepId: msg.stepId,
+              content: msg.contents ?? '',
+            }),
           })
             .then((r) => r.json() as Promise<{ data?: Project }>)
             .then((json) => {
               if (json.data) {
                 setProject(json.data);
-                setSelectedStep((prev) =>
-                  prev ? (json.data!.steps.find((s) => s.id === prev.id) ?? null) : null,
-                );
+                const completed = json.data.steps.find((s) => s.id === msg.stepId);
+                const next = findNextStep(json.data, msg.stepId!);
+                setSelectedStep(next ?? completed ?? null);
               }
               setCompletedStep(msg.stepId!);
               setTimeout(() => setCompletedStep(null), 4000);
@@ -136,15 +140,25 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             promptText: string;
             promptFilePath: string;
             executor: string;
+            supportsAutoRun: boolean;
             autoRunning?: boolean;
+            project?: Project;
           };
+          error?: string;
         };
         if (json.data) {
+          if (json.data.project) {
+            setProject(json.data.project);
+            const updated = json.data.project.steps.find((s) => s.id === stepId);
+            setSelectedStep(updated ?? null);
+          }
           setRunResult({
             ...json.data,
             stepId,
             reportPath: `workspace/projects/${id}/reports/${stepId}_report.md`,
           });
+        } else if (json.error) {
+          setError(json.error);
         }
       } finally {
         setRunLoading(false);
@@ -316,9 +330,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             onAddMemory={(cat, text) => handleAddMemory(selectedStep.id, cat, text)}
             addingMemory={addingMemory}
             onRun={(stepId) => {
-              void handleStatusChange(stepId, 'in_progress').then(() =>
-                handleRunStep(stepId),
-              );
+              void handleRunStep(stepId);
             }}
             runLoading={runLoading}
             t={t}
@@ -364,6 +376,22 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       )}
     </div>
   );
+}
+
+function findNextStep(project: Project, completedStepId: string): Step | null {
+  const completedIndex = project.executionOrder.indexOf(completedStepId);
+  const orderedIds = completedIndex >= 0
+    ? project.executionOrder.slice(completedIndex + 1)
+    : project.executionOrder;
+
+  for (const stepId of orderedIds) {
+    const step = project.steps.find((item) => item.id === stepId);
+    if (step && (step.status === 'ready' || step.status === 'not_started')) {
+      return step;
+    }
+  }
+
+  return project.steps.find((step) => step.status === 'ready' || step.status === 'not_started') ?? null;
 }
 
 // ─── Step detail panel ────────────────────────────────────────────────────────

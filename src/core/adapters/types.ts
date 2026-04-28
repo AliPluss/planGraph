@@ -7,15 +7,23 @@ export interface ExecutionContext {
   projectId: string;
   project: Project;
   step: Step;
-  projectRoot: string;  // workspace/projects/<id>
+  promptText: string;
+  projectRoot: string;
   storage?: Storage;
+}
+
+export interface ExecutionHandle {
+  id: string;
+  stop(): Promise<void>;
 }
 
 export interface ExecutionResult {
   instructions: string;
+  instructionsForUser?: string;
   promptText: string;
-  promptFilePath: string;  // relative path shown to user
+  promptFilePath: string;
   autoRunning?: boolean;
+  handleId?: string;
 }
 
 export interface ExecutorAdapter {
@@ -23,5 +31,6 @@ export interface ExecutorAdapter {
   displayName: string;
   supportsAutoRun: boolean;
   prepare(ctx: ExecutionContext): Promise<ExecutionResult>;
+  run?(ctx: ExecutionContext): Promise<ExecutionHandle>;
   executeAsync?(ctx: ExecutionContext): Promise<void>;
 }

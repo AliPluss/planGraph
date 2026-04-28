@@ -13,7 +13,7 @@ export const manualAdapter: ExecutorAdapter = {
 
   async prepare(ctx: ExecutionContext): Promise<ExecutionResult> {
     const { project, step, projectRoot } = ctx;
-    const promptText = buildRichPrompt(
+    const promptText = ctx.promptText || buildRichPrompt(
       step,
       project,
       'manual',
@@ -33,10 +33,15 @@ export const manualAdapter: ExecutorAdapter = {
     await writer.writeText(promptFile, promptText);
 
     const relativePromptPath = `.plangraph/PROMPT.md`;
-    const reportPath = `workspace/projects/${ctx.projectId}/reports/${step.id}_report.md`;
+    const reportPath = `reports/${step.id}_report.md`;
 
     const instructions = `Open your preferred AI tool and paste the prompt from:\n${relativePromptPath}\n\nWhen the step is complete, write the report to:\n${reportPath}`;
 
-    return { instructions, promptText, promptFilePath: relativePromptPath };
+    return {
+      instructions,
+      instructionsForUser: instructions,
+      promptText,
+      promptFilePath: relativePromptPath,
+    };
   },
 };

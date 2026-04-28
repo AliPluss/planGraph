@@ -5,34 +5,31 @@ import type { ReportSummary } from '@/core/types';
 
 export const dynamic = 'force-dynamic';
 
-type RouteParams = { params: Promise<{ id: string }> };
+type RouteParams = { params: Promise<{ projectId: string }> };
 
 export async function GET(req: Request, { params }: RouteParams) {
-  const { id } = await params;
-  const projectRoot = getProjectDir(id);
-
+  const { projectId } = await params;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     start(controller) {
       controller.enqueue(encoder.encode(': connected\n\n'));
 
-      const watcher = new ReportWatcher(id, projectRoot);
+      const watcher = new ReportWatcher(projectId, getProjectDir(projectId));
       void watcher.start((stepId, contents) => {
         let reportSummary: ReportSummary | undefined;
         try {
           reportSummary = parseReport(contents);
-        } catch { /* ignore read errors — client will still mark step done */ }
+        } catch {
+          reportSummary = undefined;
+        }
 
         const payload = JSON.stringify({ stepId, event: 'report_detected', contents, reportSummary });
         try {
           controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
-        } catch { /* stream may already be closed */ }
-      }).catch((error: unknown) => {
-        const payload = JSON.stringify({ event: 'watch_error', error: String(error) });
-        try {
-          controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
-        } catch { /* stream may already be closed */ }
+        } catch {
+          // The client may already have disconnected.
+        }
       });
 
       const heartbeat = setInterval(() => {
