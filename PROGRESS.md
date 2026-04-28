@@ -214,3 +214,13 @@
   - `src/app/page.tsx` — checks `/api/profile` on mount; redirects to `/onboarding` if missing
   - Dev server boots cleanly; 18/18 tests pass
 - **Notes:** —
+
+## Session 16 — Cursor + Antigravity adapters
+- **Completed:** 2026-04-28T18:01:45.7569962+02:00
+- **Files added/modified:** 9
+- **Key outcomes:**
+  - Added Cursor and Antigravity executor adapters that write `.plangraph/PROMPT.md` plus tool-specific setup files inside the project root.
+  - Registered both adapters while preserving the existing Claude Code adapter.
+  - Added executor prepare/status routes and selector UI instructions for Cursor and Antigravity setup.
+  - Added adapter tests for generated Cursor rules, Antigravity skill files, and prompt artifacts.
+- **Notes:** `npm run test` and `npm run build` passed via `npm.cmd`; sandboxed test/build attempts were blocked by Windows spawn/network restrictions.

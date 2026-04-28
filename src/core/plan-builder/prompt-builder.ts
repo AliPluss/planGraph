@@ -95,11 +95,12 @@ ${manual}`;
 function buildCursorPrompt(step: Step, project: PromptProject): string {
   return `Execute PlanGraph step ${step.id}: ${step.title}
 
-Use Cursor Composer in ${project.meta.rootPath}.
+Use Cursor Composer agent context in ${project.meta.rootPath}. Prefer @file references and rely on .cursorrules for workspace conventions.
 
 Read first:
 - @workspace/projects/${project.meta.id}/MEMORY.md
 - @workspace/projects/${project.meta.id}/OVERVIEW.md
+- @workspace/projects/${project.meta.id}/steps/${step.id}.md
 ${step.contextFiles.map((file) => `- @${file}`).join('\n') || '- Current project files as needed'}
 
 Goal:
@@ -119,6 +120,8 @@ function buildAntigravityPrompt(step: Step, project: PromptProject): string {
 
 Current step: ${step.id} - ${step.title}
 Workspace: ${project.meta.rootPath}
+
+Use the PlanGraph Skill, Plan Artifacts, and Manager view. Keep the Manager plan limited to this step.
 
 Before changing files, read:
 - .plangraph/PROMPT.md if present

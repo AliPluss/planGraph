@@ -330,6 +330,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         <ExecutorSelector
           projectId={id}
           value={project.meta.selectedExecutor}
+          activeStepId={selectedStep?.id}
           onChange={(tool: ExecutorTool) => {
             setProject({
               ...project,
