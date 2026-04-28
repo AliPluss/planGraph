@@ -1,5 +1,15 @@
 # PlanGraph — Build Progress
 
+## Session 15 — Claude Code adapter
+- **Completed:** 2026-04-28T17:53:36+02:00
+- **Files added/modified:** 11
+- **Key outcomes:**
+  - Registered the Claude Code executor adapter while preserving the Session 14 adapter contract and manual/report watcher flow.
+  - Made Open Terminal the default Claude Code mode, writing `.plangraph/PROMPT.md`, `.gitignore`, and README instructions inside the project workspace.
+  - Added explicit subprocess mode with SafeCommandRunner streaming, live SSE output handles, stop support, report writing, and optional token/cost execution logs.
+  - Added project UI controls for executor selection, Claude Code mode selection, detection banner, live output drawer, and execution log display.
+- **Notes:** `npm run test` passes (127/127). `npm run build` passes; the existing Turbopack NFT tracing warning remains. Both commands needed `npm.cmd`; test needed escalation after sandbox EPERM, and build needed escalation for Next font fetching.
+
 ## Session 14 — Executor adapter base
 - **Completed:** 2026-04-28T17:44:39+02:00
 - **Files added/modified:** 12

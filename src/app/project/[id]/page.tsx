@@ -9,7 +9,9 @@ import { ArrowLeft, X, Copy, Check, Play, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { GraphCanvas } from '@/components/plangraph/graph/GraphCanvas';
 import { StepDetails } from '@/components/plangraph/step/StepDetails';
-import type { Project, Step, StepStatus, MemoryEntry, ReportSummary } from '@/core/types';
+import { ExecutorSelector } from '@/components/plangraph/ExecutorSelector';
+import { LiveOutputDrawer } from '@/components/plangraph/run/LiveOutputDrawer';
+import type { ExecutorTool, Project, Step, StepStatus, MemoryEntry, ReportSummary } from '@/core/types';
 
 interface RunResult {
   instructions: string;
@@ -19,8 +21,11 @@ interface RunResult {
   stepId: string;
   reportPath: string;
   autoRunning?: boolean;
+  handleId?: string;
   reportSummary?: ReportSummary;
 }
+
+type RunMode = 'open-terminal' | 'subprocess';
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -40,6 +45,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   // Run modal state
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [runLoading, setRunLoading] = useState(false);
+  const [runMode, setRunMode] = useState<RunMode>('open-terminal');
+  const [liveRun, setLiveRun] = useState<{ handleId: string; stepTitle: string } | null>(null);
+  const [claudeMissing, setClaudeMissing] = useState(false);
   // Banner shown when a report is detected via SSE
   const [completedStep, setCompletedStep] = useState<string | null>(null);
 
@@ -68,6 +76,25 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     fetchProject().finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (project?.meta.selectedExecutor !== 'claude-code') {
+      setClaudeMissing(false);
+      return;
+    }
+
+    let cancelled = false;
+    fetch('/api/executors/claude-code/status')
+      .then((res) => res.json() as Promise<{ ok?: boolean; detected?: boolean }>)
+      .then((json) => {
+        if (!cancelled) setClaudeMissing(json.detected === false);
+      })
+      .catch(() => {
+        if (!cancelled) setClaudeMissing(true);
+      });
+
+    return () => { cancelled = true; };
+  }, [project?.meta.selectedExecutor]);
 
   // SSE: watch for report files and auto-advance steps
   useEffect(() => {
@@ -132,7 +159,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         const res = await fetch(`/api/projects/${id}/run`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stepId }),
+          body: JSON.stringify({ stepId, mode: runMode }),
         });
         const json = await res.json() as {
           data?: {
@@ -142,6 +169,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             executor: string;
             supportsAutoRun: boolean;
             autoRunning?: boolean;
+            handleId?: string;
             project?: Project;
           };
           error?: string;
@@ -157,6 +185,11 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             stepId,
             reportPath: `workspace/projects/${id}/reports/${stepId}_report.md`,
           });
+          if (json.data.autoRunning && json.data.handleId) {
+            const step = json.data.project?.steps.find((item) => item.id === stepId)
+              ?? project.steps.find((item) => item.id === stepId);
+            setLiveRun({ handleId: json.data.handleId, stepTitle: step?.title ?? stepId });
+          }
         } else if (json.error) {
           setError(json.error);
         }
@@ -164,7 +197,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         setRunLoading(false);
       }
     },
-    [id, project, runLoading],
+    [id, project, runLoading, runMode],
   );
 
   const applyStatusChange = useCallback(
@@ -294,6 +327,37 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         >
           Memory
         </Link>
+        <ExecutorSelector
+          projectId={id}
+          value={project.meta.selectedExecutor}
+          onChange={(tool: ExecutorTool) => {
+            setProject({
+              ...project,
+              meta: { ...project.meta, selectedExecutor: tool },
+            });
+            if (tool !== 'claude-code') setRunMode('open-terminal');
+          }}
+        />
+        {project.meta.selectedExecutor === 'claude-code' && (
+          <div className="flex rounded-md border border-border p-0.5 text-[11px]">
+            <button
+              onClick={() => setRunMode('open-terminal')}
+              className={`rounded px-2 py-0.5 ${runMode === 'open-terminal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            >
+              Open Terminal
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm('Subprocess mode runs Claude Code non-interactively and may trigger third-party tool detection in some configurations. Continue?')) {
+                  setRunMode('subprocess');
+                }
+              }}
+              className={`rounded px-2 py-0.5 ${runMode === 'subprocess' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            >
+              Subprocess
+            </button>
+          </div>
+        )}
         {/* Progress bar */}
         <div className="flex-1 flex items-center gap-2 min-w-0 ms-auto">
           <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden max-w-32">
@@ -307,6 +371,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           </span>
         </div>
       </div>
+
+      {claudeMissing && (
+        <div className="border-b bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          Claude Code not detected. Install: https://docs.claude.com/claude-code
+        </div>
+      )}
 
       {/* Graph + detail panel */}
       <div className="flex-1 relative overflow-hidden">
@@ -357,6 +427,14 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           locale={locale}
           onClose={() => setRunResult(null)}
           t={t}
+        />
+      )}
+
+      {liveRun && (
+        <LiveOutputDrawer
+          handleId={liveRun.handleId}
+          stepTitle={liveRun.stepTitle}
+          onClose={() => setLiveRun(null)}
         />
       )}
 

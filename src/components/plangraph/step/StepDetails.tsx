@@ -349,6 +349,19 @@ function StatusTab({
         <p className="mt-3 text-[11px] text-muted-foreground">
           Last updated: {step.completedAt ?? step.startedAt ?? 'Not started'}
         </p>
+        {step.executionLog && (
+          <div className="mt-3 rounded-md border border-border px-3 py-2 text-[11px] text-muted-foreground">
+            <div>Duration: {step.executionLog.durationMs}ms</div>
+            {step.executionLog.tokens && (
+              <div>
+                Tokens: {step.executionLog.tokens.input} in / {step.executionLog.tokens.output} out
+              </div>
+            )}
+            {step.executionLog.costUsd !== undefined && (
+              <div>Cost: ${step.executionLog.costUsd.toFixed(4)}</div>
+            )}
+          </div>
+        )}
       </section>
 
       <section>

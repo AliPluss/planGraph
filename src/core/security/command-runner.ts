@@ -1,6 +1,10 @@
 import { spawn } from "child_process";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
+interface CommandOptions {
+  timeoutMs?: number;
+  signal?: AbortSignal;
+}
 
 export class SafeCommandRunner {
   private allowedCommands = ["git", "npm", "node", "claude", "cursor", "code"];
@@ -9,7 +13,7 @@ export class SafeCommandRunner {
     command: string,
     args: string[],
     cwd: string,
-    opts?: { timeoutMs?: number }
+    opts?: CommandOptions
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     if (!this.allowedCommands.includes(command)) {
       throw new Error(`Command not allowed: ${command}. Allowed: ${this.allowedCommands.join(", ")}`);
@@ -18,7 +22,7 @@ export class SafeCommandRunner {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { cwd, shell: process.platform === 'win32' });
+      const child = spawn(command, args, { cwd, shell: false });
       let stdout = "";
       let stderr = "";
       let timedOut = false;
@@ -28,6 +32,12 @@ export class SafeCommandRunner {
         child.kill();
         reject(new Error(`Command timed out after ${timeoutMs}ms: ${command}`));
       }, timeoutMs);
+
+      opts?.signal?.addEventListener('abort', () => {
+        timedOut = true;
+        child.kill();
+        reject(new Error(`Command aborted: ${command}`));
+      }, { once: true });
 
       child.stdout.on("data", (d) => { stdout += String(d); });
       child.stderr.on("data", (d) => { stderr += String(d); });
@@ -50,7 +60,7 @@ export class SafeCommandRunner {
     command: string,
     args: string[],
     cwd: string,
-    opts: { timeoutMs?: number } | undefined,
+    opts: CommandOptions | undefined,
     onChunk: (data: string) => void
   ): Promise<{ exitCode: number; stderr: string; fullStdout: string }> {
     if (!this.allowedCommands.includes(command)) {
@@ -60,7 +70,7 @@ export class SafeCommandRunner {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { cwd, shell: process.platform === 'win32' });
+      const child = spawn(command, args, { cwd, shell: false });
       let fullStdout = "";
       let stderr = "";
       let timedOut = false;
@@ -70,6 +80,12 @@ export class SafeCommandRunner {
         child.kill();
         reject(new Error(`Command timed out after ${timeoutMs}ms: ${command}`));
       }, timeoutMs);
+
+      opts?.signal?.addEventListener('abort', () => {
+        timedOut = true;
+        child.kill();
+        reject(new Error(`Command aborted: ${command}`));
+      }, { once: true });
 
       child.stdout.on("data", (d) => {
         const chunk = String(d);

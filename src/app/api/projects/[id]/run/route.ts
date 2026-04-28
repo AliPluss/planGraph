@@ -10,7 +10,11 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function POST(req: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const body = await req.json() as { stepId: string; executor?: ExecutorTool };
+    const body = await req.json() as {
+      stepId: string;
+      executor?: ExecutorTool;
+      mode?: 'open-terminal' | 'subprocess';
+    };
 
     if (!body.stepId) {
       return NextResponse.json({ error: 'stepId is required' }, { status: 422 });
@@ -49,11 +53,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     const ctx = { projectId: id, project, step: project.steps[stepIndex], promptText, projectRoot, storage };
     const result = await adapter.prepare(ctx);
 
-    // Fire-and-forget for adapters that support auto-execution
-    if (adapter.executeAsync) {
-      void adapter.executeAsync(ctx).catch((err: unknown) => {
-        console.error('[run] executeAsync error:', String(err));
-      });
+    if (executor === 'claude-code' && body.mode === 'subprocess' && adapter.run) {
+      const handle = await adapter.run(ctx);
+      result.autoRunning = true;
+      result.handleId = handle.id;
     }
 
     await storage.appendAudit(
@@ -72,7 +75,12 @@ export async function POST(req: Request, { params }: RouteParams) {
         action: 'EXECUTOR_INVOKED',
         projectId: id,
         stepId: body.stepId,
-        details: { executor, adapter: adapter.displayName, autoRunning: result.autoRunning ?? false },
+        details: {
+          executor,
+          adapter: adapter.displayName,
+          mode: body.mode ?? 'open-terminal',
+          autoRunning: result.autoRunning ?? false,
+        },
       },
       id,
     );

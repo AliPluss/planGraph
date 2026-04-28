@@ -7,7 +7,12 @@ import type { ExecutorTool } from '@/core/types';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json() as { projectId?: string; stepId?: string; executor?: ExecutorTool };
+    const body = await req.json() as {
+      projectId?: string;
+      stepId?: string;
+      executor?: ExecutorTool;
+      mode?: 'open-terminal' | 'subprocess';
+    };
     if (!body.projectId || !body.stepId || !body.executor) {
       return NextResponse.json({ error: 'projectId, stepId, and executor are required' }, { status: 422 });
     }
@@ -45,6 +50,18 @@ export async function POST(req: Request) {
       projectRoot: getProjectDir(body.projectId),
       storage,
     });
+    if (body.executor === 'claude-code' && body.mode === 'subprocess' && adapter.run) {
+      const handle = await adapter.run({
+        projectId: body.projectId,
+        project,
+        step: project.steps[stepIndex],
+        promptText,
+        projectRoot: getProjectDir(body.projectId),
+        storage,
+      });
+      result.autoRunning = true;
+      result.handleId = handle.id;
+    }
 
     await storage.appendAudit(
       {
@@ -62,7 +79,12 @@ export async function POST(req: Request) {
         action: 'EXECUTOR_INVOKED',
         projectId: body.projectId,
         stepId: body.stepId,
-        details: { executor: body.executor, adapter: adapter.displayName },
+        details: {
+          executor: body.executor,
+          adapter: adapter.displayName,
+          mode: body.mode ?? 'open-terminal',
+          autoRunning: result.autoRunning ?? false,
+        },
       },
       body.projectId,
     );
@@ -71,6 +93,7 @@ export async function POST(req: Request) {
       ok: true,
       instructions: result.instructionsForUser ?? result.instructions,
       supportsAutoRun: adapter.supportsAutoRun,
+      autoRunning: result.autoRunning ?? false,
       handleId: result.handleId,
       project,
     });
