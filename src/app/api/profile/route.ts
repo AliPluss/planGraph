@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     const existing = await storage.readProfile();
 
     const profile: UserProfile = {
+      displayName: body.displayName?.trim() || existing?.displayName,
       level: body.level,
       languages: body.languages ?? [],
       tools: body.tools,

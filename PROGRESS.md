@@ -224,3 +224,13 @@
   - Added executor prepare/status routes and selector UI instructions for Cursor and Antigravity setup.
   - Added adapter tests for generated Cursor rules, Antigravity skill files, and prompt artifacts.
 - **Notes:** `npm run test` and `npm run build` passed via `npm.cmd`; sandboxed test/build attempts were blocked by Windows spawn/network restrictions.
+
+## Session 17 — Dashboard + project list
+- **Completed:** 2026-04-28T22:23:16.4840348+02:00
+- **Files added/modified:** 11
+- **Key outcomes:**
+  - Replaced the home page with a multi-project dashboard, profile greeting, action cards, tip card, and project grid.
+  - Added dashboard analytics helpers for progress, current step, status distribution, and optional execution stats.
+  - Added `/api/project` project-summary feed plus rename/delete support on existing project routes.
+  - Added per-project dashboard with progress, status bar, bounded audit-log reading, recent activity, and project header navigation.
+- **Notes:** `npm run test` and `npm run build` passed via `npm.cmd` with approval; sandboxed attempts were blocked by Windows spawn/network restrictions. Existing untracked `docs/vision/` files were left untouched and uncommitted.

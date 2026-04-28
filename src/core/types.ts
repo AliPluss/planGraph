@@ -10,6 +10,7 @@ export type Locale = 'ar' | 'en';
 export type CommunicationStyle = 'detailed' | 'concise';
 
 export interface UserProfile {
+  displayName?: string;
   level: SkillLevel;
   languages: string[];
   tools: ExecutorTool[];

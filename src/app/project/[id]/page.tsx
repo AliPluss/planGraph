@@ -322,6 +322,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           {project.meta.templateId.replace(/-/g, ' ')}
         </Badge>
         <Link
+          href={`/project/${id}/dashboard`}
+          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          Dashboard
+        </Link>
+        <Link
           href={`/project/${id}/memory`}
           className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >

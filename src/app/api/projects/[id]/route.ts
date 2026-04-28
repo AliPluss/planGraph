@@ -52,3 +52,22 @@ export async function PATCH(
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const project = await storage.readProject(id);
+
+    if (!project) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    await storage.deleteProject(id);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
+}

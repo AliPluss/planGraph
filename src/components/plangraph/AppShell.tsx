@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
+import ProjectEventToasts from './dashboard/ProjectEventToasts';
 import LocaleToggle from './LocaleToggle';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -23,6 +25,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="flex-1">{children}</main>
+      <ProjectEventToasts />
+      <Toaster />
     </div>
   );
 }
