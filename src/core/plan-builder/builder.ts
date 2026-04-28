@@ -1,7 +1,9 @@
-import type { Project, Step, Edge, Locale, ExecutorTool, ToolPrompts } from '../types';
+import type { Project, Step, Edge, Locale, ExecutorTool } from '../types';
 import type { ScopeSummary } from '../discovery/types';
 import type { StepBlueprint } from '../templates/types';
 import { getTemplateForKind } from '../templates/registry';
+import { buildPromptsForStep } from './prompt-builder';
+import { topoSort } from './topo-sort';
 
 export interface BuildOptions {
   name: string;
@@ -41,8 +43,9 @@ export function buildProject(summary: ScopeSummary, opts: BuildOptions): Project
     }
   }
 
+  const protectedFiles = template?.protectedFiles ?? [];
   const steps: Step[] = sorted.map((bp) =>
-    blueprintToStep(bp, locale, executor, affectsMap.get(bp.id) ?? []),
+    blueprintToStep(bp, locale, affectsMap.get(bp.id) ?? [], protectedFiles),
   );
 
   // Edges from dependsOn
@@ -56,9 +59,7 @@ export function buildProject(summary: ScopeSummary, opts: BuildOptions): Project
     }
   }
 
-  assignPositions(steps, sorted);
-
-  return {
+  const project: Project = {
     meta: {
       id,
       name: opts.name,
@@ -75,26 +76,27 @@ export function buildProject(summary: ScopeSummary, opts: BuildOptions): Project
     executionOrder: sorted.map((b) => b.id),
     memory: [],
   };
+
+  for (const step of project.steps) {
+    step.prompts = buildPromptsForStep(step, project, {
+      communicationStyle: 'concise',
+      languages: summary.stack,
+    });
+  }
+
+  assignPositions(steps, sorted);
+
+  return project;
 }
 
 function blueprintToStep(
   bp: StepBlueprint,
   locale: Locale,
-  executor: ExecutorTool,
   affects: string[],
+  protectedFiles: string[],
 ): Step {
   const l = locale;
   const goal = bp.goal[l] ?? bp.goal.en;
-  const criteria = (bp.successCriteria[l] ?? bp.successCriteria.en)
-    .map((c) => `- ${c}`)
-    .join('\n');
-  const mainPrompt = `${goal}\n\nSuccess criteria:\n${criteria}`;
-
-  const prompts: ToolPrompts = { manual: mainPrompt };
-  if (executor === 'claude-code') prompts.claudeCode = mainPrompt;
-  else if (executor === 'cursor') prompts.cursor = mainPrompt;
-  else if (executor === 'antigravity') prompts.antigravity = mainPrompt;
-  else if (executor === 'copilot') prompts.copilot = mainPrompt;
 
   return {
     id: bp.id,
@@ -106,58 +108,13 @@ function blueprintToStep(
     recommendedLibraries: bp.recommendedLibraries,
     successCriteria: bp.successCriteria[l] ?? bp.successCriteria.en,
     restrictions: bp.restrictions[l] ?? bp.restrictions.en,
-    protectedFiles: [],
-    prompts,
+    protectedFiles: [...protectedFiles],
+    prompts: { manual: '' },
     dependsOn: bp.dependsOn ?? [],
     affects,
     mdFile: `${bp.id}.md`,
     position: { x: 0, y: 0 },
   };
-}
-
-function topoSort(blueprints: StepBlueprint[]): StepBlueprint[] {
-  const ids = new Set(blueprints.map((b) => b.id));
-  const inDegree = new Map<string, number>();
-  const adj = new Map<string, string[]>();
-
-  for (const bp of blueprints) {
-    inDegree.set(bp.id, 0);
-    adj.set(bp.id, []);
-  }
-  for (const bp of blueprints) {
-    for (const dep of bp.dependsOn ?? []) {
-      if (!ids.has(dep)) continue;
-      adj.get(dep)!.push(bp.id);
-      inDegree.set(bp.id, (inDegree.get(bp.id) ?? 0) + 1);
-    }
-  }
-
-  const queue: string[] = [];
-  for (const [id, deg] of inDegree) {
-    if (deg === 0) queue.push(id);
-  }
-
-  const result: StepBlueprint[] = [];
-  const byId = new Map(blueprints.map((b) => [b.id, b]));
-
-  while (queue.length > 0) {
-    const id = queue.shift()!;
-    const bp = byId.get(id);
-    if (bp) result.push(bp);
-    for (const next of adj.get(id) ?? []) {
-      const newDeg = (inDegree.get(next) ?? 1) - 1;
-      inDegree.set(next, newDeg);
-      if (newDeg === 0) queue.push(next);
-    }
-  }
-
-  // Append cycle-forming steps in their original order
-  const done = new Set(result.map((b) => b.id));
-  for (const bp of blueprints) {
-    if (!done.has(bp.id)) result.push(bp);
-  }
-
-  return result;
 }
 
 function assignPositions(steps: Step[], sorted: StepBlueprint[]): void {

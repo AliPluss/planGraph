@@ -132,6 +132,31 @@ describe('buildProject', () => {
     const project = buildProject(webAppSummary, opts);
     const step = project.steps[0];
     assert.ok(step.prompts.claudeCode, 'claudeCode prompt missing');
+    assert.ok(step.prompts.cursor, 'cursor prompt missing');
+    assert.ok(step.prompts.antigravity, 'antigravity prompt missing');
+    assert.ok(step.prompts.copilot, 'copilot prompt missing');
     assert.ok(step.prompts.manual, 'manual prompt missing');
+  });
+
+  it('carries template protected files into every generated step', () => {
+    const project = buildProject(webAppSummary, opts);
+    for (const step of project.steps) {
+      assert.ok(step.protectedFiles.includes('.env'), `${step.id} missing .env protection`);
+      assert.ok(step.protectedFiles.includes('.git/**'), `${step.id} missing .git protection`);
+    }
+  });
+
+  it('generates rich executor-aware prompts', () => {
+    const project = buildProject(webAppSummary, opts);
+    const step = project.steps[0];
+
+    assert.match(step.prompts.manual, /Project context/);
+    assert.match(step.prompts.manual, /Protected files/);
+    assert.match(step.prompts.manual, /reports\/01_project_setup_report\.md/);
+
+    assert.match(step.prompts.claudeCode ?? '', /SYSTEM:/);
+    assert.match(step.prompts.claudeCode ?? '', /<user_input>/);
+    assert.match(step.prompts.cursor ?? '', /@workspace\/projects/);
+    assert.match(step.prompts.antigravity ?? '', /PlanGraph Skill Task/);
   });
 });
