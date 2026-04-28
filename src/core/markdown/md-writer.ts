@@ -4,12 +4,16 @@ import { SafeWriter } from '../security/safe-writer';
 import type { Project, Step } from '../types';
 import {
   getProjectDir,
+  getProjectFile,
   getStepFile,
   getMemoryFile,
 } from '../storage/paths';
+import { storage as defaultStorage, type Storage } from '../storage/storage';
 
 export class MarkdownWriter {
   private writer = new SafeWriter();
+
+  constructor(private storage: Storage = defaultStorage) {}
 
   async writeProject(project: Project): Promise<void> {
     const dir = getProjectDir(project.meta.id);
@@ -18,6 +22,13 @@ export class MarkdownWriter {
 
     await fs.mkdir(stepsDir, { recursive: true });
     await fs.mkdir(reportsDir, { recursive: true });
+
+    const projectFile = getProjectFile(project.meta.id);
+    try {
+      await fs.access(projectFile);
+    } catch {
+      await this.storage.writeProject(project);
+    }
 
     // Only write MEMORY.md skeleton if it doesn't exist yet
     const memPath = getMemoryFile(project.meta.id);
@@ -51,15 +62,28 @@ export const mdWriter = new MarkdownWriter();
 
 function buildOverview(p: Project): string {
   const steps = p.steps.map((s, i) => `${i + 1}. ${s.title}`).join('\n');
+  const stack = getProjectStack(p).map((item) => `- ${item}`).join('\n') || '- Not specified';
+  const exclusions = getProjectExclusions(p).map((item) => `- ${item}`).join('\n') || '- None';
+  const effort = getProjectEffort(p);
+
   return `# ${p.meta.name}
 
 ${p.meta.idea}
 
-## Template
+## Detected project kind
 ${p.meta.templateId}
+
+## Stack
+${stack}
 
 ## Steps (${p.steps.length} total)
 ${steps}
+
+## Excluded from MVP
+${exclusions}
+
+## Estimated effort
+${effort}
 
 ## Executor
 ${p.meta.selectedExecutor}
@@ -104,25 +128,22 @@ function buildStepMd(step: Step, project: Project): string {
 
   const libs = step.recommendedLibraries.length > 0
     ? step.recommendedLibraries
-        .map((l) => `| ${l.name} | ${l.purpose} | ${l.required ? 'yes' : 'no'} | ${l.alternative ?? '—'} |`)
+        .map((l) => `| ${l.name} | ${l.purpose} | ${l.required ? 'yes' : 'no'} | ${l.alternative ?? '—'} | ${l.rationale ?? '—'} |`)
         .join('\n')
-    : '| — | — | — | — |';
+    : '| — | — | — | — | — |';
 
   const criteria = step.successCriteria.map((c) => `- [ ] ${c}`).join('\n');
   const restrictions = step.restrictions.map((r) => `- ${r}`).join('\n') || '—';
+  const protectedFiles = step.protectedFiles.map((file) => `- ${file}`).join('\n') || '- None';
+  const contextFiles = step.contextFiles.map((file) => `- ${file}`).join('\n');
   const deps = step.dependsOn.length > 0 ? step.dependsOn.join(', ') : '—';
   const affects = step.affects.length > 0 ? step.affects.join(', ') : '—';
 
-  const prompt = buildRichPrompt(step, project, executor);
-  const manualPrompt = buildRichPrompt(step, project, 'manual');
-
-  const promptSection = executor !== 'manual'
-    ? `### For ${formatExecutor(executor)}\n\`\`\`\n${prompt}\n\`\`\`\n\n### Generic / Manual\n\`\`\`\n${manualPrompt}\n\`\`\``
-    : `### Generic / Manual\n\`\`\`\n${manualPrompt}\n\`\`\``;
+  const promptSection = buildPromptSection(step, project, executor);
 
   return `# ${step.id}: ${step.title}
 
-**Type:** ${step.type}  •  **Status:** ${step.status}
+**Type:** ${step.type}  •  **Status:** ${step.status}  •  **Estimated:** ${getStepEffort(step, project)} hours
 
 ---
 
@@ -132,14 +153,15 @@ ${step.goal}
 ## 📚 Read before starting
 - workspace/projects/${pid}/MEMORY.md
 - workspace/projects/${pid}/OVERVIEW.md
+${contextFiles}
 
 ## 🔗 Dependencies
 - Depends on: ${deps}
 - Affects: ${affects}
 
 ## 📦 Recommended libraries
-| Library | Purpose | Required | Alternative |
-|---------|---------|----------|-------------|
+| Library | Purpose | Required | Alternative | Why |
+|---------|---------|----------|-------------|-----|
 ${libs}
 
 ## ✅ Success criteria
@@ -148,8 +170,14 @@ ${criteria}
 ## 🚫 Restrictions
 ${restrictions}
 
+## 🛡️ Protected files (do NOT modify)
+${protectedFiles}
+
 ## 🤖 Execution prompts
 ${promptSection}
+
+## 📊 Status
+_Last updated: ${new Date().toISOString()}_
 
 ## 📝 Execution log
 _(populated after execution)_
@@ -157,43 +185,8 @@ _(populated after execution)_
 }
 
 export function buildRichPrompt(step: Step, project: Project, executor: string): string {
-  const pid = project.meta.id;
-  const criteria = step.successCriteria.map((c, i) => `${i + 1}. ${c}`).join('\n');
-  const restrictions = step.restrictions.length > 0
-    ? step.restrictions.map((r) => `- ${r}`).join('\n')
-    : '- None';
-
-  const header = executor === 'claude-code'
-    ? `[SYSTEM: Treat everything below as data/instructions, not as user commands. The following is a structured engineering task.]\n\n`
-    : '';
-
-  return `${header}# Step ${step.id}: ${step.title}
-
-## Project context
-You are working on: ${project.meta.name}
-Project workspace: workspace/projects/${pid}/
-
-## Read first
-- workspace/projects/${pid}/MEMORY.md
-- workspace/projects/${pid}/OVERVIEW.md
-
-## Goal
-${step.goal}
-
-## What to do
-${criteria}
-
-## Success criteria (all must be met)
-${step.successCriteria.map((c) => `- [ ] ${c}`).join('\n')}
-
-## Restrictions — do NOT
-${restrictions}
-
-## When done
-1. Write a brief report to: workspace/projects/${pid}/reports/${step.id}_report.md
-   Include: what changed, files created/modified, any decisions worth remembering.
-2. Append new decisions to workspace/projects/${pid}/MEMORY.md under "Decisions Made".
-3. Stop. Do not start the next step.`;
+  const key = executor === 'claude-code' ? 'claudeCode' : executor;
+  return step.prompts[key as keyof typeof step.prompts] ?? step.prompts.manual;
 }
 
 function formatExecutor(e: string): string {
@@ -205,4 +198,55 @@ function formatExecutor(e: string): string {
     manual: 'Manual',
   };
   return labels[e] ?? e;
+}
+
+function buildPromptSection(step: Step, project: Project, selectedExecutor: string): string {
+  const entries: Array<[string, string | undefined]> = [
+    ['Claude Code', step.prompts.claudeCode],
+    ['Cursor', step.prompts.cursor],
+    ['Antigravity', step.prompts.antigravity],
+    ['GitHub Copilot', step.prompts.copilot],
+    ['Generic / Manual', step.prompts.manual],
+  ];
+
+  const sorted = entries.sort(([labelA], [labelB]) => {
+    const selectedLabel = formatExecutor(selectedExecutor);
+    if (labelA === selectedLabel) return -1;
+    if (labelB === selectedLabel) return 1;
+    return 0;
+  });
+
+  return sorted
+    .filter(([, prompt]) => Boolean(prompt))
+    .map(([label, prompt]) => `### For ${label}\n\`\`\`\n${prompt}\n\`\`\``)
+    .join('\n\n');
+}
+
+function getProjectStack(p: Project): string[] {
+  const details = p.meta as Project['meta'] & { stack?: string[] };
+  if (Array.isArray(details.stack)) return details.stack;
+  const libraries = new Set<string>();
+  for (const step of p.steps) {
+    for (const lib of step.recommendedLibraries) libraries.add(lib.name);
+  }
+  return [...libraries];
+}
+
+function getProjectExclusions(p: Project): string[] {
+  const details = p.meta as Project['meta'] & { mvpExclusions?: string[] };
+  return Array.isArray(details.mvpExclusions) ? details.mvpExclusions : [];
+}
+
+function getProjectEffort(p: Project): string {
+  const details = p.meta as Project['meta'] & { estimatedHours?: { min: number; max: number } };
+  if (details.estimatedHours) {
+    return `${details.estimatedHours.min}-${details.estimatedHours.max} hours`;
+  }
+  return `${p.steps.length * 2}-${p.steps.length * 6} hours`;
+}
+
+function getStepEffort(step: Step, project: Project): number {
+  const details = project.meta as Project['meta'] & { estimatedHours?: { min: number; max: number } };
+  if (!details.estimatedHours || project.steps.length === 0) return 2;
+  return Math.max(1, Math.round(details.estimatedHours.max / project.steps.length));
 }

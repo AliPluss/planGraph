@@ -28,6 +28,9 @@ function makeStep(id: string): Step {
     prompts: {
       manual: `Manual prompt for ${id}`,
       claudeCode: `Claude Code prompt for ${id}`,
+      cursor: `Cursor prompt for ${id}`,
+      antigravity: `Antigravity prompt for ${id}`,
+      copilot: `Copilot prompt for ${id}`,
     },
     dependsOn: [],
     affects: [],
@@ -43,6 +46,9 @@ function makeProject(id: string): Project {
     idea: "A test idea for markdown writing",
     rootPath: path.join(tmpBase, "workspace", "projects", id),
     templateId: "nextjs-saas",
+    stack: ["Next.js", "TypeScript"],
+    mvpExclusions: ["Billing"],
+    estimatedHours: { min: 4, max: 8 },
     locale: "en",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -80,6 +86,11 @@ describe("MarkdownWriter", () => {
     const content = await fs.readFile(p, "utf-8");
     assert.ok(content.includes("MD Writer Test Project"));
     assert.ok(content.includes("01_setup") || content.includes("Step 01_setup"));
+    assert.ok(content.includes("## Stack"));
+    assert.ok(content.includes("Next.js"));
+    assert.ok(content.includes("## Excluded from MVP"));
+    assert.ok(content.includes("Billing"));
+    assert.ok(content.includes("4-8 hours"));
   });
 
   it("creates ROADMAP.md with step rows", async () => {
@@ -143,6 +154,21 @@ describe("MarkdownWriter", () => {
         content.includes("Criterion one"),
         `Expected step .md for ${step.id} to include success criteria`,
       );
+    }
+  });
+
+  it("each step .md contains protected files, status, and all prompt variants", async () => {
+    for (const step of project.steps) {
+      const p = path.join(projectDir, "steps", `${step.id}.md`);
+      const content = await fs.readFile(p, "utf-8");
+      assert.ok(content.includes("**Status:** not_started"));
+      assert.ok(content.includes("## 🛡️ Protected files"));
+      assert.ok(content.includes(".env"));
+      assert.ok(content.includes("### For Claude Code"));
+      assert.ok(content.includes("### For Cursor"));
+      assert.ok(content.includes("### For Antigravity"));
+      assert.ok(content.includes("### For GitHub Copilot"));
+      assert.ok(content.includes("### For Generic / Manual"));
     }
   });
 

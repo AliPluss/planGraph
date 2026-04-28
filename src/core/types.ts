@@ -89,6 +89,9 @@ export interface ProjectMeta {
   idea: string;
   rootPath: string;
   templateId: string;
+  stack?: string[];
+  mvpExclusions?: string[];
+  estimatedHours?: { min: number; max: number };
   locale: Locale;
   createdAt: string;
   updatedAt: string;
