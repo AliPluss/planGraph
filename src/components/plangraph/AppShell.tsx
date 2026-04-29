@@ -147,7 +147,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-[var(--pg-border-soft)] bg-background/86 px-4 backdrop-blur-xl lg:hidden">
             <ShellBrand compact />
             <div className="flex items-center gap-1">
-              <ShellHelp />
+              <ShellHelp isArabic={isArabic} />
               <LocaleToggle />
               <Link
                 href="/settings"
@@ -169,7 +169,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
             <div className="flex items-center gap-1">
-              <ShellHelp />
+              <ShellHelp isArabic={isArabic} />
               <LocaleToggle />
             </div>
           </header>
@@ -251,28 +251,32 @@ function UserCard({ name, meta, isArabic }: { name: string; meta: string; isArab
   );
 }
 
-function ShellHelp() {
+function ShellHelp({ isArabic }: { isArabic: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="What is PlanGraph?"
+        aria-label={isArabic ? 'ما هو PlanGraph؟' : 'What is PlanGraph?'}
         className="inline-flex size-8 items-center justify-center rounded-md outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
       >
         <CircleHelp className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel>What&apos;s PlanGraph?</DropdownMenuLabel>
+        <DropdownMenuLabel>{isArabic ? 'ما هو PlanGraph؟' : 'What&apos;s PlanGraph?'}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="flex-col items-start gap-1 whitespace-normal">
-          <span className="font-medium">Local-first planning</span>
+          <span className="font-medium">{isArabic ? 'تخطيط محلي أولاً' : 'Local-first planning'}</span>
           <span className="text-xs text-muted-foreground">
-            PlanGraph turns ideas or existing folders into executable Markdown steps.
+            {isArabic
+              ? 'يحوّل PlanGraph الأفكار أو المجلدات الحالية إلى خطوات Markdown قابلة للتنفيذ.'
+              : 'PlanGraph turns ideas or existing folders into executable Markdown steps.'}
           </span>
         </DropdownMenuItem>
         <DropdownMenuItem className="flex-col items-start gap-1 whitespace-normal">
-          <span className="font-medium">Your tools stay in charge</span>
+          <span className="font-medium">{isArabic ? 'أدواتك تبقى مسؤولة' : 'Your tools stay in charge'}</span>
           <span className="text-xs text-muted-foreground">
-            Claude Code, Cursor, Antigravity, or manual work run through your local setup.
+            {isArabic
+              ? 'يعمل Claude Code أو Cursor أو Antigravity أو التنفيذ اليدوي عبر إعدادك المحلي.'
+              : 'Claude Code, Cursor, Antigravity, or manual work run through your local setup.'}
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>

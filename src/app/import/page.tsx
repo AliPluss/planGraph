@@ -181,7 +181,7 @@ export default function ImportPage() {
         </PanelHeader>
         <PanelContent>
           {mode !== 'folder' && (
-            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            <div className="rounded-lg border border-[var(--pg-accent-amber)]/30 bg-[var(--pg-accent-amber)]/10 px-3 py-2 text-sm text-[var(--pg-accent-amber)]">
               ZIP, Git, and Markdown imports are not wired yet. Switch to Existing folder to scan and create a plan.
             </div>
           )}

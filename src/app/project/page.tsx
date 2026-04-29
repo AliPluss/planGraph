@@ -113,20 +113,20 @@ export default async function ProjectsIndexPage({ searchParams }: { searchParams
 
             <form className="mt-5 grid gap-3 md:grid-cols-[1fr_12rem_13rem_auto]" action="/project">
               <label className="relative block">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   name="q"
                   defaultValue={params.q ?? ''}
                   placeholder="Search projects"
-                  className="h-10 w-full rounded-lg border border-input bg-background/55 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
+                  className="h-10 w-full rounded-lg border border-input bg-background/55 ps-9 pe-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
                 />
               </label>
               <label className="relative block">
-                <Filter className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Filter className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <select
                   name="status"
                   defaultValue={statusFilter}
-                  className="h-10 w-full appearance-none rounded-lg border border-input bg-background/55 pl-9 pr-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
+                  className="h-10 w-full appearance-none rounded-lg border border-input bg-background/55 ps-9 pe-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
                 >
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -136,11 +136,11 @@ export default async function ProjectsIndexPage({ searchParams }: { searchParams
                 </select>
               </label>
               <label className="relative block">
-                <ArrowDownAZ className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <ArrowDownAZ className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <select
                   name="sort"
                   defaultValue={sortBy}
-                  className="h-10 w-full appearance-none rounded-lg border border-input bg-background/55 pl-9 pr-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
+                  className="h-10 w-full appearance-none rounded-lg border border-input bg-background/55 ps-9 pe-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
                 >
                   {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>

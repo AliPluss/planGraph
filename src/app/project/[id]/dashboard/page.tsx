@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { ArrowLeft, Clock, FileText, GitBranch, WalletCards } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SnapshotPanel } from '@/components/plangraph/dashboard/SnapshotPanel';
+import { Panel, PanelContent, PanelHeader, PanelTitle } from '@/components/plangraph/Panel';
 import {
   getCurrentStep,
   getProgress,
@@ -31,13 +31,13 @@ const STATUS_LABELS: Record<StepStatus, string> = {
 };
 
 const STATUS_COLORS: Record<StepStatus, string> = {
-  not_started: 'bg-slate-300',
-  ready: 'bg-sky-500',
-  in_progress: 'bg-amber-500',
-  done: 'bg-emerald-600',
-  failed: 'bg-red-600',
-  needs_review: 'bg-orange-500',
-  blocked: 'bg-zinc-500',
+  not_started: 'bg-muted-foreground/45',
+  ready: 'bg-[var(--pg-accent-blue)]',
+  in_progress: 'bg-[var(--pg-accent-amber)]',
+  done: 'bg-[var(--pg-accent-green)]',
+  failed: 'bg-[var(--pg-accent-danger)]',
+  needs_review: 'bg-[var(--pg-accent-amber)]',
+  blocked: 'bg-[var(--pg-accent-danger)]/70',
 };
 
 async function readRecentAudit(projectId: string, maxEntries = 10): Promise<AuditEntry[]> {
@@ -116,7 +116,7 @@ export default async function ProjectDashboardPage({
           </div>
         </div>
 
-        <div className="w-full max-w-md rounded-lg border bg-card p-4">
+        <div className="w-full max-w-md rounded-lg border border-[var(--pg-border-soft)] bg-[var(--pg-surface-glass)] p-4">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Overall progress</span>
             <span className="font-medium">{progress.percent}%</span>
@@ -141,11 +141,11 @@ export default async function ProjectDashboardPage({
             <MetricCard icon={<GitBranch className="size-4" />} label="Snapshots" value={snapshotCount.toString()} />
           </div>
 
-          <Card className="rounded-lg">
-            <CardHeader>
-              <CardTitle className="text-base">Status distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <Panel>
+            <PanelHeader>
+              <PanelTitle>Status distribution</PanelTitle>
+            </PanelHeader>
+            <PanelContent>
               <div className="flex h-4 overflow-hidden rounded-full bg-muted">
                 {(Object.keys(distribution) as StepStatus[]).map((status) => {
                   const count = distribution[status];
@@ -168,20 +168,20 @@ export default async function ProjectDashboardPage({
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </PanelContent>
+          </Panel>
 
-          <Card className="rounded-lg">
-            <CardHeader>
-              <CardTitle className="text-base">Recent activity</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Panel>
+            <PanelHeader>
+              <PanelTitle>Recent activity</PanelTitle>
+            </PanelHeader>
+            <PanelContent>
               {auditEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No audit entries yet.</p>
               ) : (
                 <ol className="space-y-3">
                   {auditEntries.map((entry, index) => (
-                    <li key={`${entry.timestamp}-${index}`} className="rounded-md border px-3 py-2">
+                    <li key={`${entry.timestamp}-${index}`} className="rounded-lg border border-[var(--pg-border-soft)] bg-background/35 px-3 py-2">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-medium">{entry.action.replace(/_/g, ' ')}</span>
                         <span className="text-xs text-muted-foreground">
@@ -198,8 +198,8 @@ export default async function ProjectDashboardPage({
                   ))}
                 </ol>
               )}
-            </CardContent>
-          </Card>
+            </PanelContent>
+          </Panel>
         </TabsContent>
         <TabsContent value="snapshots" className="m-0">
           <SnapshotPanel
@@ -223,16 +223,16 @@ function MetricCard({
   value: string;
 }) {
   return (
-    <Card className="rounded-lg">
-      <CardContent className="flex items-center gap-3 p-4">
-        <span className="inline-flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
+    <article className="pg-card p-4">
+      <div className="flex items-center gap-3">
+        <span className="inline-flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
           {icon}
         </span>
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
           <p className="text-lg font-semibold">{value}</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }
