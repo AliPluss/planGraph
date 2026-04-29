@@ -1,11 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { X, Copy, Check, Play, Loader2 } from 'lucide-react';
+import {
+  X,
+  Copy,
+  Check,
+  Play,
+  Loader2,
+  BookOpen,
+  Boxes,
+  ClipboardList,
+  FileText,
+  Library,
+  ListChecks,
+  Network,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import type { ExecutorTool, MemoryEntry, Step, StepStatus } from '@/core/types';
 
 const STATUS_BADGE: Record<StepStatus, string> = {
@@ -69,17 +85,24 @@ export function StepDetails({
 
   return (
     <div
-      className={`absolute top-0 ${isRtl ? 'left-0' : 'right-0'} z-10 flex h-full w-96 flex-col border-${isRtl ? 'r' : 'l'} border-border bg-background shadow-lg`}
+      className={cn(
+        'absolute top-0 z-10 flex h-full w-[28rem] max-w-[calc(100vw-1.5rem)] flex-col border-border bg-background/95 shadow-[var(--pg-shadow-panel)] backdrop-blur-xl',
+        isRtl ? 'left-0 border-r' : 'right-0 border-l',
+      )}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 py-3">
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/70 px-4 py-4">
         <div className="min-w-0">
-          <div className="line-clamp-2 text-sm font-semibold">{step.title}</div>
-          <div className="mt-1 flex items-center gap-1.5">
+          <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Execution node
+          </div>
+          <div className="line-clamp-2 text-base font-semibold leading-snug">{step.title}</div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE[step.status]}`}>
               {t(`project.stepPanel.status.${step.status}`)}
             </span>
             <Badge variant="outline" className="text-[11px] capitalize">{step.type}</Badge>
+            <Badge variant="secondary" className="text-[11px]">{executorLabel(executor)}</Badge>
           </div>
         </div>
         <button
@@ -92,28 +115,24 @@ export function StepDetails({
       </div>
 
       <Tabs defaultValue="overview" className="flex min-h-0 flex-1 flex-col">
-        <div className="shrink-0 border-b px-3 py-2">
-          <TabsList className="grid w-full grid-cols-4">
+        <div className="shrink-0 border-b border-border/70 px-3 py-2">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/60">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="markdown">Markdown</TabsTrigger>
-            <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            <TabsTrigger value="prompt">Prompt</TabsTrigger>
             <TabsTrigger value="status">Status</TabsTrigger>
+            <TabsTrigger value="markdown">Markdown</TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="overview" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          <OverviewTab step={step} t={t} />
+        <TabsContent value="overview" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <OverviewTab step={step} executor={executor} t={t} />
         </TabsContent>
 
-        <TabsContent value="markdown" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          <MarkdownTab projectId={projectId} step={step} />
-        </TabsContent>
-
-        <TabsContent value="prompts" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        <TabsContent value="prompt" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <PromptsTab step={step} executor={executor} t={t} />
         </TabsContent>
 
-        <TabsContent value="status" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        <TabsContent value="status" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <StatusTab
             step={step}
             updating={updating}
@@ -126,72 +145,119 @@ export function StepDetails({
             t={t}
           />
         </TabsContent>
+
+        <TabsContent value="markdown" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <MarkdownTab projectId={projectId} step={step} />
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function OverviewTab({ step, t }: { step: Step; t: StepDetailsProps['t'] }) {
-  return (
-    <div className="flex flex-col gap-4 text-sm">
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t('project.stepPanel.goal')}
-        </h3>
-        <p className="leading-relaxed">{step.goal}</p>
-      </section>
+function OverviewTab({
+  step,
+  executor,
+  t,
+}: {
+  step: Step;
+  executor: ExecutorTool;
+  t: StepDetailsProps['t'];
+}) {
+  const required = step.recommendedLibraries.filter((lib) => lib.required);
+  const optional = step.recommendedLibraries.filter((lib) => !lib.required);
+  const availablePrompts = PROMPT_TABS.filter(({ key }) => step.prompts[key]);
 
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Dependencies
-        </h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(step.dependsOn.length > 0 ? step.dependsOn : ['None']).map((dep) => (
-            <Badge key={dep} variant="secondary" className="text-[11px]">{dep}</Badge>
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      <DetailSection
+        icon={<BookOpen className="size-4" />}
+        title="Description"
+        description="What this node must accomplish before execution can move on."
+      >
+        <p className="leading-6 text-foreground/90">{step.goal}</p>
+      </DetailSection>
+
+      <DetailSection
+        icon={<Sparkles className="size-4" />}
+        title="Skills"
+        description="Execution capability, dependencies, and affected nodes."
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <MetricPill label="Step type" value={step.type} />
+          <MetricPill label="Executor" value={executorLabel(executor)} />
+        </div>
+        <div className="mt-3 flex flex-col gap-2">
+          <ChipRow label="Depends on" items={step.dependsOn} empty="None" />
+          <ChipRow label="Affects" items={step.affects} empty="No downstream nodes" />
+        </div>
+      </DetailSection>
+
+      <DetailSection
+        icon={<Library className="size-4" />}
+        title={t('project.stepPanel.libraries')}
+        description="Packages or APIs this step expects the executor to consider."
+      >
+        {step.recommendedLibraries.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {required.length > 0 && <LibraryGroup title="Required" libraries={required} />}
+            {optional.length > 0 && <LibraryGroup title="Optional" libraries={optional} />}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">No libraries specified.</p>
+        )}
+      </DetailSection>
+
+      <DetailSection
+        icon={<Boxes className="size-4" />}
+        title="Tools and files"
+        description="Prompt targets, context files, and guarded files for this node."
+      >
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {availablePrompts.map(({ key, label }) => (
+            <Badge
+              key={key}
+              variant={executorPromptKey(executor) === key ? 'default' : 'outline'}
+              className="text-[11px]"
+            >
+              {label}
+            </Badge>
           ))}
         </div>
-      </section>
+        <ChipRow label="Context" items={step.contextFiles} empty="No context files" />
+        <ChipRow label="Protected" items={step.protectedFiles} empty="No protected files" tone="danger" />
+        <div className="mt-3 grid gap-2 text-xs">
+          <FileReference icon={<FileText className="size-3.5" />} label="Step markdown" value={step.mdFile} />
+          {step.reportFile && (
+            <FileReference icon={<ClipboardList className="size-3.5" />} label="Report" value={step.reportFile} />
+          )}
+        </div>
+      </DetailSection>
 
-      {step.recommendedLibraries.length > 0 && (
-        <section>
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('project.stepPanel.libraries')}
-          </h3>
-          <div className="overflow-hidden rounded-md border">
-            <table className="w-full text-xs">
-              <tbody>
-                {step.recommendedLibraries.map((lib) => (
-                  <tr key={lib.name} className="border-b last:border-0">
-                    <td className="px-2 py-1.5 font-medium">{lib.name}</td>
-                    <td className="px-2 py-1.5 text-muted-foreground">{lib.purpose}</td>
-                    <td className="px-2 py-1.5 text-right">{lib.required ? 'Required' : 'Optional'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t('project.stepPanel.criteria')}
-        </h3>
-        <ul className="space-y-1">
-          {step.successCriteria.map((criterion) => (
-            <li key={criterion} className="flex gap-2 text-xs leading-snug">
-              <input type="checkbox" className="mt-0.5 h-3.5 w-3.5" />
-              <span>{criterion}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <DetailSection
+        icon={<ListChecks className="size-4" />}
+        title={t('project.stepPanel.criteria')}
+        description="Checklist used to decide whether the executor output is complete."
+      >
+        {step.successCriteria.length > 0 ? (
+          <ul className="space-y-2">
+            {step.successCriteria.map((criterion) => (
+              <li key={criterion} className="flex gap-2 text-xs leading-5 text-foreground/90">
+                <Check className="mt-0.5 size-3.5 shrink-0 text-[var(--pg-accent-green)]" />
+                <span>{criterion}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">No success criteria defined.</p>
+        )}
+      </DetailSection>
 
       {step.restrictions.length > 0 && (
-        <section>
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('project.stepPanel.restrictions')}
-          </h3>
+        <DetailSection
+          icon={<ShieldCheck className="size-4" />}
+          title={t('project.stepPanel.restrictions')}
+          description="Notes and guardrails that must stay true while executing."
+        >
           <ul className="space-y-1">
             {step.restrictions.map((restriction) => (
               <li key={restriction} className="text-xs leading-snug text-destructive/80">
@@ -199,7 +265,7 @@ function OverviewTab({ step, t }: { step: Step; t: StepDetailsProps['t'] }) {
               </li>
             ))}
           </ul>
-        </section>
+        </DetailSection>
       )}
     </div>
   );
@@ -221,11 +287,11 @@ function MarkdownTab({ projectId, step }: { projectId: string; step: Step }) {
       .catch((err: unknown) => setError(String(err)));
   }, [projectId, step.id]);
 
-  if (error) return <p className="text-sm text-destructive">{error}</p>;
+  if (error) return <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>;
   if (content === null) return <p className="text-sm text-muted-foreground">Loading markdown...</p>;
 
   return (
-    <div className="prose prose-sm max-w-none dark:prose-invert prose-pre:overflow-x-auto">
+    <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-pre:overflow-x-auto prose-pre:rounded-lg prose-pre:border prose-pre:border-border prose-pre:bg-muted/70">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   );
@@ -240,16 +306,26 @@ function PromptsTab({
   executor: ExecutorTool;
   t: StepDetailsProps['t'];
 }) {
-  const defaultTab = executor === 'claude-code' ? 'claudeCode' : executor;
+  const defaultTab = executorPromptKey(executor);
+  const tabs = PROMPT_TABS.filter(({ key }) => step.prompts[key]);
 
   return (
-    <Tabs defaultValue={step.prompts[defaultTab as keyof Step['prompts']] ? defaultTab : 'manual'}>
-      <TabsList className="mb-3 grid grid-cols-2">
-        {PROMPT_TABS.filter(({ key }) => step.prompts[key]).map(({ key, label }) => (
+    <Tabs defaultValue={step.prompts[defaultTab] ? defaultTab : 'manual'} className="flex flex-col gap-3">
+      <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
+        <div className="mb-1 flex items-center gap-2 text-xs font-medium">
+          <Network className="size-3.5 text-[var(--pg-accent-cyan)]" />
+          Prompt targets
+        </div>
+        <p className="text-xs leading-5 text-muted-foreground">
+          Copy the active executor prompt or switch tabs to use another generated prompt.
+        </p>
+      </div>
+      <TabsList className="grid grid-cols-2 bg-muted/60">
+        {tabs.map(({ key, label }) => (
           <TabsTrigger key={key} value={key}>{label}</TabsTrigger>
         ))}
       </TabsList>
-      {PROMPT_TABS.filter(({ key }) => step.prompts[key]).map(({ key, label }) => (
+      {tabs.map(({ key, label }) => (
         <TabsContent key={key} value={key} className="m-0">
           <PromptBlock label={label} prompt={step.prompts[key] ?? ''} t={t} />
         </TabsContent>
@@ -277,18 +353,18 @@ function PromptBlock({
   }
 
   return (
-    <section>
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h3>
+    <section className="rounded-lg border border-border/70 bg-[var(--pg-surface-glass)]">
+      <div className="flex items-center justify-between gap-2 border-b border-border/70 px-3 py-2.5">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label} prompt</h3>
         <button
           onClick={copyPrompt}
-          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/70 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
           {copied ? t('project.stepPanel.copied') : t('project.stepPanel.copy')}
         </button>
       </div>
-      <pre className="max-h-[56vh] overflow-auto whitespace-pre-wrap rounded-md bg-muted px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+      <pre className="max-h-[61vh] overflow-auto whitespace-pre-wrap px-3 py-3 text-[11px] leading-relaxed text-muted-foreground">
         {prompt}
       </pre>
     </section>
@@ -321,20 +397,26 @@ function StatusTab({
   const [memText, setMemText] = useState('');
 
   return (
-    <div className="flex flex-col gap-4 text-sm">
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t('project.stepPanel.statusLabel')}
-        </h3>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE[step.status]}`}>
-          {t(`project.stepPanel.status.${step.status}`)}
-        </span>
+    <div className="flex flex-col gap-3 text-sm">
+      <DetailSection
+        icon={<ClipboardList className="size-4" />}
+        title={t('project.stepPanel.statusLabel')}
+        description="Run the step, record review state, or reopen completed work."
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE[step.status]}`}>
+            {t(`project.stepPanel.status.${step.status}`)}
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            Last updated: {step.completedAt ?? step.startedAt ?? 'Not started'}
+          </span>
+        </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {(step.status === 'not_started' || step.status === 'ready' || step.status === 'blocked') && (
             <button
               onClick={() => onRun(step.id)}
               disabled={updating || runLoading}
-              className="inline-flex items-center gap-1.5 rounded bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {runLoading
                 ? <><Loader2 className="h-3 w-3 animate-spin" />{t('project.stepPanel.actions.start')}</>
@@ -346,11 +428,8 @@ function StatusTab({
           <StatusButton label={t('project.stepPanel.actions.fail')} show={step.status === 'in_progress'} disabled={updating} onClick={() => onStatusChange('failed')} variant="danger" />
           <StatusButton label={t('project.stepPanel.actions.reopen')} show={step.status === 'done' || step.status === 'failed'} disabled={updating} onClick={() => onStatusChange('not_started')} variant="ghost" />
         </div>
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          Last updated: {step.completedAt ?? step.startedAt ?? 'Not started'}
-        </p>
         {step.executionLog && (
-          <div className="mt-3 rounded-md border border-border px-3 py-2 text-[11px] text-muted-foreground">
+          <div className="mt-3 rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
             <div>Duration: {step.executionLog.durationMs}ms</div>
             {step.executionLog.tokens && (
               <div>
@@ -362,15 +441,20 @@ function StatusTab({
             )}
           </div>
         )}
-      </section>
+      </DetailSection>
 
-      <section>
+      <DetailSection
+        icon={<FileText className="size-4" />}
+        title={t('project.stepPanel.memory.title')}
+        description="Notes, decisions, issues, and conventions linked to this node."
+      >
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('project.stepPanel.memory.title')}
-          </h3>
+          <span className="text-xs text-muted-foreground">{memories.length} saved</span>
           {!memFormOpen && (
-            <button onClick={() => setMemFormOpen(true)} className="text-[11px] text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setMemFormOpen(true)}
+              className="rounded-md border border-border bg-background/70 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
               + {t('project.stepPanel.memory.addNote')}
             </button>
           )}
@@ -383,7 +467,7 @@ function StatusTab({
         {memories.length > 0 && (
           <ul className="mb-2 flex flex-col gap-2">
             {memories.map((memory, index) => (
-              <li key={`${memory.createdAt}-${index}`} className="flex flex-col gap-1">
+              <li key={`${memory.createdAt}-${index}`} className="flex flex-col gap-1 rounded-md border border-border/70 bg-muted/20 px-3 py-2">
                 <span className={`self-start rounded-full px-1.5 py-0.5 text-[10px] font-medium ${MEMORY_CATEGORY_CLASS[memory.category]}`}>
                   {t(`project.stepPanel.memory.categories.${memory.category}`)}
                 </span>
@@ -425,22 +509,146 @@ function StatusTab({
                   setMemFormOpen(false);
                 }}
                 disabled={!memText.trim() || addingMemory}
-                className="rounded bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {t('project.stepPanel.memory.save')}
               </button>
               <button
                 onClick={() => { setMemFormOpen(false); setMemText(''); }}
-                className="rounded border border-border px-3 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted"
+                className="rounded-md border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted"
               >
                 {t('project.stepPanel.memory.cancel')}
               </button>
             </div>
           </div>
         )}
-      </section>
+      </DetailSection>
     </div>
   );
+}
+
+function DetailSection({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-lg border border-border/70 bg-[var(--pg-surface-glass)] p-3 shadow-sm">
+      <div className="mb-3 flex gap-2.5">
+        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">{title}</h3>
+          {description && <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{description}</p>}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border/70 bg-muted/25 px-2.5 py-2">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-0.5 truncate text-xs font-medium capitalize">{value}</div>
+    </div>
+  );
+}
+
+function ChipRow({
+  label,
+  items,
+  empty,
+  tone = 'default',
+}: {
+  label: string;
+  items: string[];
+  empty: string;
+  tone?: 'default' | 'danger';
+}) {
+  const values = items.length > 0 ? items : [empty];
+  return (
+    <div>
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="flex flex-wrap gap-1.5">
+        {values.map((item) => (
+          <Badge
+            key={item}
+            variant={items.length > 0 ? 'secondary' : 'outline'}
+            className={cn('max-w-full truncate text-[11px]', tone === 'danger' && items.length > 0 && 'border-destructive/30 bg-destructive/10 text-destructive')}
+          >
+            {item}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LibraryGroup({
+  title,
+  libraries,
+}: {
+  title: string;
+  libraries: Step['recommendedLibraries'];
+}) {
+  return (
+    <div className="rounded-md border border-border/70 bg-muted/20">
+      <div className="border-b border-border/70 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </div>
+      <div className="divide-y divide-border/70">
+        {libraries.map((lib) => (
+          <div key={lib.name} className="px-2.5 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium">{lib.name}</span>
+              {lib.alternative && (
+                <span className="truncate text-[10px] text-muted-foreground">Alt: {lib.alternative}</span>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{lib.purpose}</p>
+            {lib.rationale && <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{lib.rationale}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FileReference({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-2.5 py-2">
+      <span className="text-muted-foreground">{icon}</span>
+      <span className="shrink-0 text-[11px] font-medium text-muted-foreground">{label}</span>
+      <code className="min-w-0 truncate text-[11px] text-foreground">{value}</code>
+    </div>
+  );
+}
+
+function executorPromptKey(executor: ExecutorTool): keyof Step['prompts'] {
+  return executor === 'claude-code' ? 'claudeCode' : executor;
+}
+
+function executorLabel(executor: ExecutorTool): string {
+  if (executor === 'claude-code') return 'Claude Code';
+  if (executor === 'manual') return 'Manual';
+  return executor.charAt(0).toUpperCase() + executor.slice(1);
 }
 
 type ButtonVariant = 'success' | 'warning' | 'danger' | 'ghost';
@@ -470,7 +678,7 @@ function StatusButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${VARIANT_CLASS[variant]}`}
+      className={`rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${VARIANT_CLASS[variant]}`}
     >
       {label}
     </button>
