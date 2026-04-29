@@ -10,6 +10,7 @@ import {
   Compass,
   FolderKanban,
   LayoutDashboard,
+  ListChecks,
   Plus,
   Settings,
   UserRound,
@@ -43,6 +44,7 @@ const navSections = [
     key: 'operations',
     label: { en: 'Operations', ar: 'التشغيل' },
     items: [
+      { href: '/execution', fallback: { en: 'Execution center', ar: 'مركز التنفيذ' }, icon: ListChecks },
       { href: '/import', fallback: { en: 'Import & snapshots', ar: 'الاستيراد واللقطات' }, icon: ArchiveRestore },
     ],
   },
