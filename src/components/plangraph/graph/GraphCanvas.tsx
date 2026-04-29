@@ -26,7 +26,7 @@ const STEP_HEIGHT = 72;
 const SYNTH_WIDTH = 260;
 const SYNTH_HEIGHT = 80;
 
-const nodeTypes: NodeTypes = {
+const NODE_TYPES: NodeTypes = {
   stepNode: StepNode,
   rootNode: RootNode,
   deliveryNode: DeliveryNode,
@@ -40,6 +40,7 @@ interface GraphCanvasProps {
 }
 
 export function GraphCanvas({ project, selectedStep, locale, onSelectStep }: GraphCanvasProps) {
+  const stableNodeTypes = useMemo(() => NODE_TYPES, []);
   const doneCount = project.steps.filter((step) => step.status === 'done').length;
   const percent = project.steps.length > 0
     ? Math.round((doneCount / project.steps.length) * 100)
@@ -61,7 +62,7 @@ export function GraphCanvas({ project, selectedStep, locale, onSelectStep }: Gra
     <ReactFlow
       nodes={nodes}
       edges={edges}
-      nodeTypes={nodeTypes}
+      nodeTypes={stableNodeTypes}
       onNodeClick={handleNodeClick}
       onPaneClick={() => onSelectStep(null)}
       fitView
