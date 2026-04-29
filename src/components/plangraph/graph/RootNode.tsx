@@ -10,13 +10,17 @@ export interface RootNodeData {
 
 function RootNode({ data }: NodeProps<RootNodeData>) {
   return (
-    <div className="w-[260px] rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-center shadow-sm">
-      <Handle type="source" position={Position.Bottom} className="!h-2 !w-2" />
-      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="w-[260px] rounded-lg border border-[var(--pg-accent-purple)]/35 bg-[var(--pg-accent-purple)]/10 px-4 py-3 text-center shadow-[0_18px_48px_oklch(0.56_0.22_292_/_16%)] backdrop-blur-md">
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!h-2.5 !w-2.5 !border-2 !border-[var(--pg-surface-0)] !bg-[var(--pg-accent-purple)]"
+      />
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pg-accent-purple)]">
         Project Idea
       </div>
-      <div className="mt-1 line-clamp-2 text-sm font-semibold">{data.name}</div>
-      <div className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">{data.idea}</div>
+      <div className="mt-1 line-clamp-2 text-sm font-semibold text-foreground">{data.name}</div>
+      <div className="mt-1 line-clamp-1 text-[11px] text-[var(--pg-text-faint)]">{data.idea}</div>
     </div>
   );
 }

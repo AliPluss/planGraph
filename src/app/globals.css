@@ -187,4 +187,61 @@
     background-image: var(--pg-canvas-grid);
     background-size: 24px 24px;
   }
+
+  .pg-graph-canvas {
+    background:
+      radial-gradient(circle at 15% 20%, oklch(0.56 0.22 292 / 14%), transparent 32%),
+      radial-gradient(circle at 82% 12%, oklch(0.68 0.14 210 / 12%), transparent 28%),
+      var(--pg-surface-0);
+  }
+
+  .pg-graph-canvas .react-flow__pane {
+    cursor: grab;
+  }
+
+  .pg-graph-canvas .react-flow__pane:active {
+    cursor: grabbing;
+  }
+
+  .pg-graph-canvas .react-flow__edge-path {
+    filter: drop-shadow(0 0 7px oklch(0.72 0.05 265 / 20%));
+  }
+
+  .pg-graph-canvas .react-flow__edge.selected .react-flow__edge-path {
+    stroke: var(--pg-accent-cyan);
+    stroke-width: 2.2;
+  }
+
+  .pg-graph-canvas .react-flow__controls {
+    overflow: hidden;
+    border: 1px solid var(--pg-border-soft);
+    border-radius: 0.75rem;
+    background: var(--pg-surface-glass);
+    box-shadow: var(--pg-shadow-panel);
+    backdrop-filter: blur(18px);
+  }
+
+  .pg-graph-canvas .react-flow__controls-button {
+    border: 0;
+    border-bottom: 1px solid var(--pg-border-soft);
+    background: transparent;
+    color: var(--foreground);
+  }
+
+  .pg-graph-canvas .react-flow__controls-button:hover {
+    background: var(--muted);
+  }
+
+  .pg-graph-canvas .react-flow__controls-button svg {
+    fill: currentColor;
+  }
+
+  .pg-graph-canvas .react-flow__minimap {
+    overflow: hidden;
+    border: 1px solid var(--pg-border-soft);
+    border-radius: 0.75rem;
+    background: var(--pg-surface-glass);
+    box-shadow: var(--pg-shadow-panel);
+    backdrop-filter: blur(18px);
+  }
 }

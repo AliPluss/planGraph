@@ -6,6 +6,7 @@ import ReactFlow, {
   BackgroundVariant,
   Controls,
   MiniMap,
+  MarkerType,
   type Edge as RFEdge,
   type Node as RFNode,
   type NodeTypes,
@@ -22,9 +23,9 @@ type GraphNodeData = StepNodeData | RootNodeData | DeliveryNodeData;
 const ROOT_ID = 'node_root';
 const DELIVERY_ID = 'node_delivery';
 const STEP_WIDTH = 220;
-const STEP_HEIGHT = 72;
+const STEP_HEIGHT = 88;
 const SYNTH_WIDTH = 260;
-const SYNTH_HEIGHT = 80;
+const SYNTH_HEIGHT = 92;
 
 const NODE_TYPES: NodeTypes = {
   stepNode: StepNode,
@@ -60,6 +61,7 @@ export function GraphCanvas({ project, selectedStep, locale, onSelectStep }: Gra
 
   return (
     <ReactFlow
+      className="pg-graph-canvas"
       nodes={nodes}
       edges={edges}
       nodeTypes={stableNodeTypes}
@@ -71,26 +73,36 @@ export function GraphCanvas({ project, selectedStep, locale, onSelectStep }: Gra
       maxZoom={2}
       proOptions={{ hideAttribution: true }}
     >
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--border)" />
-      <Controls showInteractive={false} />
+      <Background
+        variant={BackgroundVariant.Dots}
+        gap={24}
+        size={1.25}
+        color="oklch(0.72 0.05 265 / 34%)"
+      />
+      <Controls
+        className="pg-graph-controls"
+        showInteractive={false}
+      />
       <MiniMap
+        className="pg-graph-minimap"
         nodeColor={(node) => {
-          if (node.id === ROOT_ID) return '#8b5cf6';
-          if (node.id === DELIVERY_ID) return '#10b981';
+          if (node.id === ROOT_ID) return 'oklch(0.56 0.22 292)';
+          if (node.id === DELIVERY_ID) return 'oklch(0.66 0.16 150)';
           const step = (node.data as Partial<StepNodeData> | undefined)?.step;
-          if (!step) return '#e5e7eb';
+          if (!step) return 'oklch(0.8 0.018 260)';
           const map: Record<string, string> = {
-            planning: '#a855f7',
-            setup: '#3b82f6',
-            implementation: '#10b981',
-            integration: '#06b6d4',
-            verification: '#f59e0b',
-            delivery: '#6366f1',
+            planning: 'oklch(0.56 0.22 292)',
+            setup: 'oklch(0.58 0.18 255)',
+            implementation: 'oklch(0.66 0.16 150)',
+            integration: 'oklch(0.68 0.14 210)',
+            verification: 'oklch(0.76 0.16 78)',
+            delivery: 'oklch(0.58 0.18 255)',
           };
-          return map[step.type] ?? '#e5e7eb';
+          return map[step.type] ?? 'oklch(0.8 0.018 260)';
         }}
-        maskColor="rgba(0,0,0,0.06)"
-        style={{ borderRadius: 8, border: '1px solid var(--border)' }}
+        maskColor="oklch(0.1 0.02 265 / 46%)"
+        pannable
+        zoomable
       />
     </ReactFlow>
   );
@@ -106,6 +118,8 @@ function buildGraph(
   const firstSteps = project.steps.filter((step) => step.dependsOn.length === 0);
   const dependedOn = new Set(project.edges.map((edge) => edge.source));
   const lastSteps = project.steps.filter((step) => !dependedOn.has(step.id));
+  const edgeStyle = { stroke: 'oklch(0.72 0.05 265 / 46%)', strokeWidth: 1.6 };
+  const edgeMarker = { type: MarkerType.ArrowClosed, color: 'oklch(0.72 0.05 265 / 46%)' };
 
   const nodes: RFNode<GraphNodeData>[] = [
     {
@@ -137,21 +151,24 @@ function buildGraph(
       source: ROOT_ID,
       target: step.id,
       type: 'smoothstep',
-      style: { stroke: 'var(--border)', strokeWidth: 1.5 },
+      style: edgeStyle,
+      markerEnd: edgeMarker,
     })),
     ...project.edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
       type: 'smoothstep',
-      style: { stroke: 'var(--border)', strokeWidth: 1.5 },
+      style: edgeStyle,
+      markerEnd: edgeMarker,
     })),
     ...lastSteps.map((step) => ({
       id: `${step.id}->${DELIVERY_ID}`,
       source: step.id,
       target: DELIVERY_ID,
       type: 'smoothstep',
-      style: { stroke: 'var(--border)', strokeWidth: 1.5 },
+      style: edgeStyle,
+      markerEnd: edgeMarker,
     })),
   ];
 
