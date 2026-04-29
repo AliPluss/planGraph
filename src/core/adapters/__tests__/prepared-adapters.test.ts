@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { antigravityAdapter } from '../antigravity-adapter';
+import { claudeCodeAdapter } from '../claude-code-adapter';
 import { cursorAdapter } from '../cursor-adapter';
 import type { ExecutionContext } from '../types';
 import type { Project, Step } from '../../types';
@@ -22,6 +23,7 @@ function makeStep(): Step {
     protectedFiles: ['.env', '.git/**'],
     prompts: {
       manual: 'Manual prompt. When done, write reports/01_setup_report.md.',
+      claudeCode: 'Claude prompt. When done, write reports/01_setup_report.md.',
       cursor: 'Cursor prompt. When done, write reports/01_setup_report.md.',
       antigravity: 'Antigravity prompt. When done, write reports/01_setup_report.md.',
     },
@@ -64,6 +66,22 @@ async function makeContext(): Promise<ExecutionContext> {
 }
 
 describe('prepared adapters', () => {
+  it('writes Claude Code prompt artifacts inside the project root', async () => {
+    const ctx = await makeContext();
+    const result = await claudeCodeAdapter.prepare(ctx);
+
+    const prompt = await fs.readFile(path.join(ctx.projectRoot, '.plangraph', 'PROMPT.md'), 'utf8');
+    const gitignore = await fs.readFile(path.join(ctx.projectRoot, '.plangraph', '.gitignore'), 'utf8');
+    const readme = await fs.readFile(path.join(ctx.projectRoot, '.plangraph', 'README.md'), 'utf8');
+
+    assert.equal(prompt, 'Claude prompt. When done, write reports/01_setup_report.md.');
+    assert.equal(gitignore, '*\n');
+    assert.match(readme, /managed by PlanGraph/);
+    assert.equal(result.promptFilePath, '.plangraph/PROMPT.md');
+    assert.equal(result.autoRunning, false);
+    assert.match(result.instructions, /Run: `claude`/);
+  });
+
   it('writes Cursor rules and active prompt inside the project root', async () => {
     process.env.PLANGRAPH_SKIP_CURSOR_LAUNCH = '1';
     const ctx = await makeContext();
