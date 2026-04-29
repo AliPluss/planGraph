@@ -264,3 +264,13 @@
   - Replaced the placeholder README, added MIT LICENSE, and documented all MVP sessions in CHANGELOG.md.
   - Polished the home import card, locale-aware greeting, AppShell help dropdown, and final package scripts.
 - **Notes:** `npm run test` and `npm run build` passed via `npm.cmd` with approval; sandboxed attempts were blocked by Windows spawn restrictions. `lint` remains `eslint` because local Next.js 16 docs state `next lint` was removed. Existing untracked `docs/vision/` files were left untouched and uncommitted.
+
+## MVP 2 Session 4 — Dashboard Overview V2
+- **Completed:** 2026-04-29T23:00:00+02:00
+- **Files added/modified:** 2
+- **Key outcomes:**
+  - Polished the home dashboard against `01-dashboard-overview-v1.png` and `08-dashboard-overview-v2.png`.
+  - Added a circular project-progress KPI, screenshot-style metric cards, a richer active-project panel, next suggested step card, adapter/validation/snapshot/memory cards, blocked-items panel, recent activity list, and a quick actions row.
+  - Preserved the existing profile/project/audit fetch flow and existing route links.
+- **Verification:** `npm.cmd run test` and `npm.cmd run build` passed.
+- **Notes:** The first sandboxed `npm.cmd run test` attempt was blocked by Windows `spawn EPERM`; the approved rerun passed.
