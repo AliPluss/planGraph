@@ -7,7 +7,6 @@ import ReactFlow, {
   Controls,
   MiniMap,
   type Edge as RFEdge,
-  type EdgeTypes,
   type Node as RFNode,
   type NodeTypes,
 } from 'reactflow';
@@ -32,7 +31,6 @@ const nodeTypes: NodeTypes = {
   rootNode: RootNode,
   deliveryNode: DeliveryNode,
 };
-const edgeTypes: EdgeTypes = {};
 
 interface GraphCanvasProps {
   project: Project;
@@ -64,7 +62,6 @@ export function GraphCanvas({ project, selectedStep, locale, onSelectStep }: Gra
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
       onNodeClick={handleNodeClick}
       onPaneClick={() => onSelectStep(null)}
       fitView
