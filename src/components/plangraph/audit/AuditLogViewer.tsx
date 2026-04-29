@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Download, Filter } from 'lucide-react';
+import { Download, Filter, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from '@/components/plangraph/Panel';
 import {
   Select,
   SelectContent,
@@ -45,21 +47,27 @@ export function AuditLogViewer({ entries }: AuditLogViewerProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Audit log</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Most recent events first. Large logs are read from the tail only.
-          </p>
+    <Panel>
+      <PanelHeader className="flex-col md:flex-row md:items-start">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--pg-accent-cyan)]/12 text-[var(--pg-accent-cyan)]">
+            <ScrollText className="size-4" />
+          </span>
+          <div>
+            <PanelTitle>Audit timeline</PanelTitle>
+            <PanelDescription>
+              Most recent events first. Large logs are read from the tail only.
+            </PanelDescription>
+          </div>
         </div>
         <Button variant="outline" onClick={exportJson}>
           <Download className="size-4" />
-          Export as JSON
+          Export JSON
         </Button>
-      </div>
+      </PanelHeader>
 
-      <div className="flex flex-col gap-2 rounded-lg border p-3 md:flex-row md:items-center">
+      <PanelContent>
+      <div className="flex flex-col gap-2 rounded-lg border border-[var(--pg-border-soft)] bg-background/35 p-3 md:flex-row md:items-center">
         <Filter className="hidden size-4 text-muted-foreground md:block" />
         <Select value={action} onValueChange={(value) => setAction(value ?? ALL)}>
           <SelectTrigger className="md:w-64">
@@ -82,36 +90,40 @@ export function AuditLogViewer({ entries }: AuditLogViewerProps) {
         />
       </div>
 
-      <div className="rounded-lg border">
+      <div className="rounded-lg border border-[var(--pg-border-soft)] bg-background/35">
         {filtered.length === 0 ? (
           <p className="px-4 py-8 text-sm text-muted-foreground">No audit entries match the current filters.</p>
         ) : (
-          <ol className="divide-y">
+          <ol className="divide-y divide-[var(--pg-border-soft)]">
             {filtered.map((entry, index) => (
-              <li key={`${entry.timestamp}-${index}`} className="px-4 py-3">
-                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">{entry.action.replace(/_/g, ' ')}</span>
-                    {entry.stepId && (
-                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                        {entry.stepId}
-                      </span>
-                    )}
+              <li key={`${entry.timestamp}-${index}`} className="grid gap-3 px-4 py-3 md:grid-cols-[1rem_1fr]">
+                <span className="mt-1 hidden size-2 rounded-full bg-[var(--pg-accent-cyan)] shadow-[0_0_0_4px_var(--pg-accent-cyan)]/10 md:block" />
+                <div>
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium">{entry.action.replace(/_/g, ' ')}</span>
+                      {entry.stepId && (
+                        <Badge variant="outline" className="font-mono text-[11px]">
+                          {entry.stepId}
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(entry.timestamp).toLocaleString()}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(entry.timestamp).toLocaleString()}
-                  </span>
+                  {entry.details && (
+                    <pre className="mt-2 max-h-36 overflow-auto rounded-md bg-muted/70 px-3 py-2 text-xs text-muted-foreground whitespace-pre-wrap">
+                      {JSON.stringify(entry.details, null, 2)}
+                    </pre>
+                  )}
                 </div>
-                {entry.details && (
-                  <pre className="mt-2 max-h-36 overflow-auto rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground whitespace-pre-wrap">
-                    {JSON.stringify(entry.details, null, 2)}
-                  </pre>
-                )}
               </li>
             ))}
           </ol>
         )}
       </div>
-    </div>
+      </PanelContent>
+    </Panel>
   );
 }
