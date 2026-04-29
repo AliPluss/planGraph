@@ -43,3 +43,6 @@ next-env.d.ts
 # PlanGraph workspace user data
 workspace/projects/
 !workspace/.gitkeep
+
+workspace/profile.json
+workspace/profile.json.backup
