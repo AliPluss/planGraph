@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { GitBranch, Loader2, RotateCcw } from 'lucide-react';
+import { GitCompareArrows, GitBranch, Loader2, RotateCcw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,6 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from '@/components/plangraph/Panel';
+import { cn } from '@/lib/utils';
 
 interface SnapshotEntry {
   tag: string;
@@ -32,8 +35,11 @@ export function SnapshotPanel({ projectId, projectName, autoSnapshot }: Snapshot
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [diff, setDiff] = useState<{ tag: string; text: string } | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [rollbackTag, setRollbackTag] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState('');
+
+  const selectedSnapshot = snapshots.find((snapshot) => snapshot.tag === selectedTag) ?? snapshots[0];
 
   useEffect(() => {
     let cancelled = false;
@@ -42,7 +48,10 @@ export function SnapshotPanel({ projectId, projectName, autoSnapshot }: Snapshot
       .then((res) => res.json() as Promise<{ data?: SnapshotEntry[]; error?: string }>)
       .then((json) => {
         if (cancelled) return;
-        if (json.data) setSnapshots(json.data);
+        if (json.data) {
+          setSnapshots(json.data);
+          setSelectedTag((current) => current ?? json.data?.[0]?.tag ?? null);
+        }
         if (json.error) setError(json.error);
       })
       .catch((err: unknown) => {
@@ -71,6 +80,7 @@ export function SnapshotPanel({ projectId, projectName, autoSnapshot }: Snapshot
   }
 
   async function loadDiff(tag: string) {
+    setSelectedTag(tag);
     setWorking(true);
     setError(null);
     try {
@@ -110,23 +120,25 @@ export function SnapshotPanel({ projectId, projectName, autoSnapshot }: Snapshot
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-base font-semibold">Snapshots</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            PlanGraph creates a git tag before each step starts so you can inspect or roll back project changes.
-          </p>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(event) => void toggleAutoSnapshot(event.target.checked)}
-            className="size-4 rounded border-border accent-primary"
-          />
-          Auto-snapshot before each step
-        </label>
-      </div>
+      <Panel>
+        <PanelHeader className="mb-0 flex-col md:flex-row md:items-center">
+          <div>
+            <PanelTitle>Snapshot timeline</PanelTitle>
+            <PanelDescription>
+              PlanGraph creates a git tag before each step starts so you can inspect or restore project changes.
+            </PanelDescription>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(event) => void toggleAutoSnapshot(event.target.checked)}
+              className="size-4 rounded border-border accent-primary"
+            />
+            Auto-snapshot before each step
+          </label>
+        </PanelHeader>
+      </Panel>
 
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -134,61 +146,115 @@ export function SnapshotPanel({ projectId, projectName, autoSnapshot }: Snapshot
         </div>
       )}
 
-      <div className="rounded-lg border">
-        {loading ? (
-          <div className="flex items-center gap-2 px-4 py-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            Loading snapshots
-          </div>
-        ) : snapshots.length === 0 ? (
-          <div className="flex items-start gap-3 px-4 py-6 text-sm text-muted-foreground">
-            <GitBranch className="mt-0.5 size-4" />
-            No snapshots yet. Start a step with auto-snapshot enabled to create the first tag.
-          </div>
-        ) : (
-          <div className="divide-y">
-            {snapshots.map((snapshot) => (
-              <div key={snapshot.tag} className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
-                <div className="min-w-0">
-                  <p className="truncate font-mono text-sm">{snapshot.tag}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {new Date(snapshot.date).toLocaleString()} · {snapshot.subject}
-                  </p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Panel>
+          <PanelHeader>
+            <div>
+              <PanelTitle>Captured states</PanelTitle>
+              <PanelDescription>Use the latest safe state as a reference before comparing or restoring.</PanelDescription>
+            </div>
+            <Badge variant="secondary">{snapshots.length} total</Badge>
+          </PanelHeader>
+          <PanelContent>
+            {loading ? (
+              <div className="flex items-center gap-2 rounded-md border border-[var(--pg-border-soft)] px-4 py-6 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Loading snapshots
+              </div>
+            ) : snapshots.length === 0 ? (
+              <div className="flex items-start gap-3 rounded-md border border-[var(--pg-border-soft)] px-4 py-6 text-sm text-muted-foreground">
+                <GitBranch className="mt-0.5 size-4" />
+                No snapshots yet. Start a step with auto-snapshot enabled to create the first tag.
+              </div>
+            ) : (
+              <ol className="relative space-y-3 border-s border-[var(--pg-border-soft)] ps-4">
+                {snapshots.map((snapshot, index) => {
+                  const selected = selectedSnapshot?.tag === snapshot.tag;
+
+                  return (
+                    <li key={snapshot.tag} className="relative">
+                      <span
+                        className={cn(
+                          'absolute -start-[21px] top-4 size-2.5 rounded-full border border-background bg-muted-foreground',
+                          selected && 'bg-primary ring-4 ring-primary/20',
+                        )}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTag(snapshot.tag)}
+                        className={cn(
+                          'w-full rounded-md border border-[var(--pg-border-soft)] bg-muted/20 p-3 text-left transition-colors hover:border-[var(--pg-border-strong)]',
+                          selected && 'border-primary/60 bg-primary/10',
+                        )}
+                      >
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate font-mono text-sm">{snapshot.tag}</p>
+                              {index === 0 && <Badge variant="outline">Latest</Badge>}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {new Date(snapshot.date).toLocaleString()} · {snapshot.subject}
+                            </p>
+                          </div>
+                          <span className="text-xs text-muted-foreground">Select</span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </PanelContent>
+        </Panel>
+
+        <Panel tone="muted">
+          <PanelHeader>
+            <div>
+              <PanelTitle>Compare and restore</PanelTitle>
+              <PanelDescription>Review the selected snapshot before choosing a destructive restore action.</PanelDescription>
+            </div>
+          </PanelHeader>
+          <PanelContent>
+            {selectedSnapshot ? (
+              <>
+                <div className="rounded-md border border-[var(--pg-border-soft)] bg-background/30 p-3">
+                  <p className="break-all font-mono text-sm">{selectedSnapshot.tag}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">{new Date(selectedSnapshot.date).toLocaleString()}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{selectedSnapshot.subject}</p>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button variant="outline" size="sm" onClick={() => void loadDiff(snapshot.tag)} disabled={working}>
-                    Diff vs HEAD
+                <div className="grid gap-2">
+                  <Button variant="outline" onClick={() => void loadDiff(selectedSnapshot.tag)} disabled={working}>
+                    {working ? <Loader2 className="size-4 animate-spin" /> : <GitCompareArrows className="size-4" />}
+                    Compare with HEAD
                   </Button>
                   <Button
                     variant="destructive"
-                    size="sm"
                     onClick={() => {
-                      setRollbackTag(snapshot.tag);
+                      setRollbackTag(selectedSnapshot.tag);
                       setConfirmation('');
                     }}
                     disabled={working}
                   >
-                    <RotateCcw className="size-3.5" />
-                    Rollback to here
+                    <RotateCcw className="size-4" />
+                    Restore this snapshot
                   </Button>
                 </div>
+                {diff?.tag === selectedSnapshot.tag && (
+                  <pre className="max-h-64 overflow-auto rounded-md border border-[var(--pg-border-soft)] bg-background/40 p-3 text-xs whitespace-pre-wrap">
+                    {diff.text || 'No differences reported.'}
+                  </pre>
+                )}
+              </>
+            ) : (
+              <div className="flex items-start gap-3 rounded-md border border-[var(--pg-border-soft)] p-3 text-sm text-muted-foreground">
+                <GitBranch className="mt-0.5 size-4" />
+                Select a snapshot to compare or restore.
               </div>
-            ))}
-          </div>
-        )}
+            )}
+          </PanelContent>
+        </Panel>
       </div>
-
-      <Dialog open={diff !== null} onOpenChange={(open) => !open && setDiff(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Diff vs HEAD</DialogTitle>
-            <DialogDescription>{diff?.tag}</DialogDescription>
-          </DialogHeader>
-          <pre className="max-h-80 overflow-auto rounded-md bg-muted p-3 text-xs whitespace-pre-wrap">
-            {diff?.text}
-          </pre>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={rollbackTag !== null} onOpenChange={(open) => !open && setRollbackTag(null)}>
         <DialogContent>
