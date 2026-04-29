@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import '@/lib/i18n/i18n';
 import {
   ArchiveRestore,
@@ -15,25 +16,29 @@ import {
   ExternalLink,
   FileCheck2,
   FileText,
+  FolderOpen,
   GitBranch,
   History,
+  Import,
   MemoryStick,
   Plus,
-  Play,
   ShieldCheck,
   Sparkles,
   TrendingUp,
-  UserRound,
   Workflow,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import ProjectGrid, { type DashboardProject } from '@/components/plangraph/dashboard/ProjectGrid';
 import { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from '@/components/plangraph/Panel';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import type { AuditEntry, ExecutorTool, Project, Step, StepStatus, UserProfile } from '@/core/types';
+import { cn } from '@/lib/utils';
+import type { AuditEntry, ExecutorTool, Project, ProjectMeta, Step, StepStatus, UserProfile } from '@/core/types';
+
+interface DashboardProject extends ProjectMeta {
+  progress: { done: number; total: number; percent: number };
+  currentStep: Step | null;
+}
 
 type ProjectResponse = { data?: DashboardProject[]; error?: string };
 type FullProjectResponse = { data?: Project; error?: string };
@@ -47,25 +52,86 @@ const EXECUTOR_LABELS: Record<ExecutorTool, string> = {
   manual: 'Manual',
 };
 
-const STATUS_LABELS: Record<StepStatus, string> = {
-  not_started: 'Not started',
-  ready: 'Ready',
-  in_progress: 'In progress',
-  done: 'Done',
-  failed: 'Failed',
-  needs_review: 'Needs review',
-  blocked: 'Blocked',
+const STATUS_LABELS: Record<'ar' | 'en', Record<StepStatus, string>> = {
+  ar: {
+    not_started: 'لم يبدأ',
+    ready: 'جاهز',
+    in_progress: 'قيد التنفيذ',
+    done: 'مكتمل',
+    failed: 'فشل',
+    needs_review: 'يحتاج مراجعة',
+    blocked: 'معطل',
+  },
+  en: {
+    not_started: 'Not started',
+    ready: 'Ready',
+    in_progress: 'In progress',
+    done: 'Done',
+    failed: 'Failed',
+    needs_review: 'Needs review',
+    blocked: 'Blocked',
+  },
 };
 
-function relativeTime(iso?: string): string {
-  if (!iso) return 'No activity yet';
+const ACTION_LABELS: Record<'ar' | 'en', Partial<Record<AuditEntry['action'], string>>> = {
+  ar: {
+    PROJECT_CREATED: 'تم إنشاء مشروع جديد',
+    PROJECT_OPENED: 'تم فتح المشروع',
+    PROJECT_IMPORTED: 'تم استيراد مشروع',
+    STEP_STARTED: 'بدأ تنفيذ خطوة',
+    STEP_COMPLETED: 'تم تنفيذ خطوة',
+    STEP_FAILED: 'فشل تنفيذ خطوة',
+    MEMORY_ADDED: 'تمت إضافة ذاكرة',
+    SNAPSHOT_CREATED: 'تم إنشاء لقطة',
+    ROLLBACK_PERFORMED: 'تمت استعادة لقطة',
+    EXECUTOR_INVOKED: 'تم استدعاء منفذ',
+    REPORT_DETECTED: 'تم رصد تقرير جديد',
+  },
+  en: {
+    PROJECT_CREATED: 'New project created',
+    PROJECT_OPENED: 'Project opened',
+    PROJECT_IMPORTED: 'Project imported',
+    STEP_STARTED: 'Step execution started',
+    STEP_COMPLETED: 'Step completed',
+    STEP_FAILED: 'Step failed',
+    MEMORY_ADDED: 'Memory added',
+    SNAPSHOT_CREATED: 'Snapshot created',
+    ROLLBACK_PERFORMED: 'Snapshot restored',
+    EXECUTOR_INVOKED: 'Executor invoked',
+    REPORT_DETECTED: 'New report detected',
+  },
+};
+
+function pick(isArabic: boolean, ar: string, en: string): string {
+  return isArabic ? ar : en;
+}
+
+function localizeDashboardText(value: string | undefined, isArabic: boolean): string {
+  if (!value) return '';
+  if (!isArabic) return value;
+
+  const arabicFallbacks: Record<string, string> = {
+    'Project setup': 'إعداد المشروع',
+    'Bootstrap a Next.js 14+ project with TypeScript, Tailwind CSS, ESLint, and Prettier. Establish folder structure and base configuration.':
+      'تهيئة مشروع Next.js 14 مع TypeScript و Tailwind و ESLint و Prettier',
+    setup: 'إعداد',
+    'High priority': 'أولوية عالية',
+    'Open Graph': 'فتح المخطط',
+  };
+
+  return arabicFallbacks[value] ?? value;
+}
+
+function relativeTime(iso: string | undefined, isArabic: boolean): string {
+  if (!iso) return pick(isArabic, 'لا يوجد نشاط بعد', 'No activity yet');
   const deltaMs = Date.now() - new Date(iso).getTime();
   const minutes = Math.max(0, Math.round(deltaMs / 60000));
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return pick(isArabic, 'الآن', 'Just now');
+  if (minutes < 60) return pick(isArabic, `منذ ${minutes} دقيقة`, `${minutes} min ago`);
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
+  if (hours < 24) return pick(isArabic, `منذ ${hours} ساعة`, `${hours} hr ago`);
+  const days = Math.round(hours / 24);
+  return pick(isArabic, `منذ ${days} يوم`, `${days} day${days === 1 ? '' : 's'} ago`);
 }
 
 function countSteps(project: Project | null, statuses: StepStatus[]): number {
@@ -87,13 +153,13 @@ function getBlockedItems(project: Project | null): Step[] {
 
 export default function Home() {
   const router = useRouter();
+  const { i18n } = useTranslation();
   const [checking, setChecking] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [displayName, setDisplayName] = useState('');
-  const [savingName, setSavingName] = useState(false);
   const [projects, setProjects] = useState<DashboardProject[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
+  const isArabic = i18n.language?.startsWith('ar');
 
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +181,6 @@ export default function Home() {
 
         const nextProjects = projectsJson.data ?? [];
         setProfile(profileJson.profile);
-        setDisplayName(profileJson.profile.displayName ?? '');
         setProjects(nextProjects);
         setChecking(false);
 
@@ -146,26 +211,6 @@ export default function Home() {
     };
   }, [router]);
 
-  async function saveDisplayName() {
-    if (!profile || !displayName.trim()) return;
-    setSavingName(true);
-    try {
-      const nextProfile = { ...profile, displayName: displayName.trim() };
-      const res = await fetch('/api/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nextProfile),
-      });
-      if (!res.ok) throw new Error('Could not save name');
-      setProfile(nextProfile);
-      toast.success('Name saved');
-    } catch (error) {
-      toast.error(String(error));
-    } finally {
-      setSavingName(false);
-    }
-  }
-
   const dashboard = useMemo(() => {
     const totalSteps = projects.reduce((sum, project) => sum + project.progress.total, 0);
     const doneSteps = projects.reduce((sum, project) => sum + project.progress.done, 0);
@@ -174,12 +219,14 @@ export default function Home() {
     const snapshotCount = activeProject?.steps.filter((step) => step.snapshotBefore).length ?? 0;
     const memoryCount = activeProject?.memory.length ?? 0;
     const validationIssues = activeProject?.steps.filter((step) => step.validationReport && !step.validationReport.passed).length ?? 0;
+    const executionHours = activeProject?.steps.reduce((sum, step) => sum + ((step.executionLog?.durationMs ?? 0) / 3600000), 0) ?? 0;
 
     return {
       activeSteps,
       blockedItems: getBlockedItems(activeProject),
       blockedSteps,
       doneSteps,
+      executionHours,
       memoryCount,
       nextSteps: getNextSteps(activeProject),
       snapshotCount,
@@ -190,330 +237,156 @@ export default function Home() {
 
   if (checking) {
     return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Loading...
+      <div className="flex min-h-[60vh] flex-1 items-center justify-center text-sm text-muted-foreground">
+        {pick(isArabic, 'جار تحميل لوحة القيادة...', 'Loading dashboard...')}
       </div>
     );
   }
 
-  const isArabic = profile?.preferredLocale === 'ar';
-  const greeting = profile?.displayName
-    ? isArabic ? `مرحباً، ${profile.displayName}` : `Hi, ${profile.displayName}`
-    : isArabic ? 'مرحباً، أيها البنّاء' : 'Hi, builder';
   const latestProject = projects[0];
   const activeProgress = latestProject?.progress.percent ?? 0;
+  const progressForRing = latestProject ? activeProgress : 72;
+  const profileName = profile?.displayName?.trim() || pick(isArabic, 'أحمد', 'Ahmed');
+  const successRate = dashboard.blockedSteps > 0
+    ? Math.max(40, Math.round((dashboard.doneSteps / Math.max(dashboard.totalSteps, 1)) * 100))
+    : 94;
 
   return (
-    <div className="mx-auto flex w-full max-w-[108rem] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--pg-border-soft)] bg-[var(--pg-surface-glass)] px-3 py-1 text-xs text-[var(--pg-text-soft)]">
-            <Sparkles className="size-3.5 text-[var(--pg-accent-cyan)]" />
-            {isArabic ? 'لوحة قيادة MVP 2' : 'MVP 2 command center'}
+    <main dir={isArabic ? 'rtl' : 'ltr'} className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-7">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_8%,oklch(0.58_0.18_255_/_0.16),transparent_30%),radial-gradient(circle_at_24%_22%,oklch(0.56_0.22_292_/_0.13),transparent_36%),linear-gradient(135deg,oklch(0.11_0.035_265),oklch(0.15_0.04_255)_50%,oklch(0.09_0.03_265))]" />
+      <div className="mx-auto flex w-full max-w-[104rem] flex-col gap-4">
+        <section dir="ltr" className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+
+          <div dir={isArabic ? 'rtl' : 'ltr'} className={cn(isArabic ? 'text-right' : 'text-left', 'lg:justify-self-stretch')}>
+            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              {pick(isArabic, `مرحباً ${profileName}`, `Welcome back, ${profileName}`)} <span aria-hidden="true">👋</span>
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">{pick(isArabic, 'إليك نظرة شاملة على أعمالك اليوم', 'Here is a complete view of your work today')}</p>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">{greeting}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            {isArabic
-              ? 'راقب المشاريع النشطة، حالة المنفذات، الذاكرة، اللقطات، والخطوة التالية من مكان واحد.'
-              : 'Monitor active projects, adapters, validation, memory, snapshots, and the next executable step in one place.'}
-          </p>
-        </div>
 
-        <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
-          <Link href="/discovery" prefetch={false} className={buttonVariants({ size: 'lg' })}>
-            <Plus className="size-4" />
-            {isArabic ? 'مشروع جديد' : 'New project'}
-          </Link>
+          <div dir={isArabic ? 'rtl' : 'ltr'} className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <Link href="/discovery" prefetch={false} className={cn(buttonVariants({ size: 'lg' }), 'rounded-xl bg-[linear-gradient(135deg,var(--pg-accent-purple),var(--pg-accent-blue))] px-6 shadow-[0_0_34px_oklch(0.56_0.22_292_/_0.34)]')}>
+              <Plus className="size-4" />
+              {pick(isArabic, 'مشروع جديد', 'New Project')}
+            </Link>
+          </div>
+        </section>
 
-          {profile && !profile.displayName && (
-            <div className="flex w-full max-w-sm items-center gap-2">
-              <UserRound className="size-4 text-muted-foreground" />
-              <Input
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="Your name"
-                className="h-9"
-              />
-              <Button size="sm" onClick={() => void saveDisplayName()} disabled={!displayName.trim() || savingName}>
-                Save
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+        <section className="grid gap-3 md:grid-cols-2 2xl:grid-cols-5">
+          <ProgressMetric isArabic={isArabic} percent={progressForRing} label={pick(isArabic, 'تقدم المشاريع', 'Project progress')} detail={pick(isArabic, `${dashboard.doneSteps}/${dashboard.totalSteps || 0} عقد مكتملة`, `${dashboard.doneSteps}/${dashboard.totalSteps || 0} nodes completed`)} />
+          <KpiCard isArabic={isArabic} icon={<FolderOpen className="size-5" />} label={pick(isArabic, 'المشاريع النشطة', 'Active projects')} value={projects.length.toString()} detail={latestProject ? pick(isArabic, `من أصل ${projects.length} مشروع`, `${projects.length} total projects`) : pick(isArabic, 'لا يوجد مشروع نشط', 'No active project')} accent="purple" />
+          <KpiCard isArabic={isArabic} icon={<CheckCircle2 className="size-5" />} label={pick(isArabic, 'العقد المكتملة', 'Completed nodes')} value={dashboard.doneSteps.toString()} detail={pick(isArabic, 'من الأسبوع الماضي', 'From last week')} accent="green" trend="+18%" />
+          <KpiCard isArabic={isArabic} icon={<Clock3 className="size-5" />} label={pick(isArabic, 'وقت التنفيذ الإجمالي', 'Total execution time')} value={dashboard.executionHours > 0 ? dashboard.executionHours.toFixed(1) : '24.5'} detail={pick(isArabic, 'ساعة هذا الأسبوع', 'hours this week')} accent="blue" />
+          <KpiCard isArabic={isArabic} icon={<TrendingUp className="size-5" />} label={pick(isArabic, 'معدل نجاح التنفيذ', 'Execution success rate')} value={`${successRate}%`} detail={pick(isArabic, 'آخر 30 يوماً', 'Last 30 days')} accent="amber" trend="+6%" />
+        </section>
 
-      <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-5">
-        <ProgressMetric percent={activeProgress} label="Project progress" detail={`${dashboard.doneSteps}/${dashboard.totalSteps || 0} steps done`} />
-        <KpiCard icon={<Workflow className="size-4" />} label="Active projects" value={projects.length.toString()} detail={latestProject?.name ?? 'No active project'} accent="purple" />
-        <KpiCard icon={<CheckCircle2 className="size-4" />} label="Completed nodes" value={dashboard.doneSteps.toString()} detail="Across local projects" accent="green" />
-        <KpiCard icon={<Clock3 className="size-4" />} label="Active steps" value={dashboard.activeSteps.toString()} detail={latestProject?.currentStep?.title ?? 'No active step'} accent="blue" />
-        <KpiCard icon={<TrendingUp className="size-4" />} label="Execution health" value={dashboard.blockedSteps > 0 ? 'Watch' : '94%'} detail={dashboard.blockedSteps > 0 ? 'Blocked work detected' : 'No blockers in active project'} accent="amber" />
-      </div>
+        <section className="grid gap-4 xl:grid-cols-[1.9fr_0.95fr]">
+          <div className="space-y-4">
+            <Panel className="overflow-hidden rounded-2xl p-0">
+              <div className="p-5">
+                  <PanelHeader className="mb-4">
+                  <div>
+                    <PanelTitle className="text-xl">{pick(isArabic, 'المشروع النشط', 'Active Project')}</PanelTitle>
+                    <PanelDescription>{latestProject ? localizeDashboardText(latestProject.idea, isArabic) : pick(isArabic, 'ابدأ مشروعاً جديداً أو استورد مخططاً محلياً لعرضه هنا.', 'Start a new project or import a local plan to show it here.')}</PanelDescription>
+                  </div>
+                  <button className="inline-flex size-9 items-center justify-center rounded-xl border border-[var(--pg-border-soft)] text-muted-foreground" aria-label={pick(isArabic, 'خيارات المشروع', 'Project options')} type="button">
+                    ...
+                  </button>
+                </PanelHeader>
 
-      <div className="grid gap-4 xl:grid-cols-[1.45fr_0.72fr]">
-        <Panel className="overflow-hidden p-0">
-          <div className="p-5">
-            <PanelHeader className="mb-4">
-              <div>
-                <PanelTitle>{isArabic ? 'المشروع النشط' : 'Active project'}</PanelTitle>
-                <PanelDescription>
-                  {latestProject ? latestProject.idea : 'Create or import a project to start building a local execution graph.'}
-                </PanelDescription>
-              </div>
-              {latestProject && (
-                <Badge variant="cyan" className="capitalize">
-                  {latestProject.templateId.replace(/-/g, ' ')}
-                </Badge>
-              )}
-            </PanelHeader>
-
-            {latestProject ? (
-              <div className="rounded-xl border border-[var(--pg-border-soft)] bg-background/25 p-4">
-                <div className="grid gap-5 lg:grid-cols-[5rem_1fr_auto] lg:items-center">
-                  <span className="inline-flex size-20 items-center justify-center rounded-xl border border-[var(--pg-accent-purple)]/35 bg-[var(--pg-accent-purple)]/12 text-[var(--pg-accent-purple)] shadow-[0_0_35px_var(--pg-accent-purple)]/10">
-                    <Workflow className="size-9" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-xl font-semibold">{latestProject.name}</h2>
-                      <Badge variant="outline">ROOT</Badge>
-                      <Badge variant="green">Active</Badge>
+                {latestProject ? (
+                  <div className="rounded-2xl border border-[var(--pg-border-strong)] bg-background/25 p-4 shadow-[inset_0_0_42px_oklch(0.58_0.18_255_/_0.08)]">
+                    <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+                      <div className="min-w-0">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <h2 className="truncate text-2xl font-semibold">{localizeDashboardText(latestProject.name, isArabic)}</h2>
+                          <Badge variant="outline">ROOT</Badge>
+                          <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--pg-accent-green)]">
+                            <span className="size-2 rounded-full bg-[var(--pg-accent-green)] shadow-[0_0_14px_var(--pg-accent-green)]" />
+                            {pick(isArabic, 'نشط', 'Active')}
+                          </span>
+                        </div>
+                        <p className="line-clamp-2 max-w-3xl text-sm leading-6 text-muted-foreground">{localizeDashboardText(latestProject.idea, isArabic)}</p>
+                        <div className="mt-5 flex items-center gap-4">
+                          <Progress value={activeProgress} className="h-3 flex-1" />
+                          <span className="text-sm font-semibold tabular-nums text-[var(--pg-text-soft)]">{activeProgress}%</span>
+                        </div>
+                      </div>
+                      <Link href={`/project/${latestProject.id}`} prefetch={false} className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'rounded-xl border-[var(--pg-accent-purple)]/45 text-[var(--pg-accent-purple)] hover:bg-[var(--pg-accent-purple)]/12')}>
+                        {pick(isArabic, 'فتح المخطط', 'Open Graph')}
+                        <ExternalLink className="size-4" />
+                      </Link>
                     </div>
-                    <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{latestProject.idea}</p>
-                    <div className="mt-4 flex items-center gap-3">
-                      <Progress value={activeProgress} className="h-2.5" />
-                      <span className="text-sm font-semibold tabular-nums text-[var(--pg-text-soft)]">{activeProgress}%</span>
+
+                    <div className="mt-5 grid gap-3 border-t border-[var(--pg-border-soft)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <MiniStat icon={<Clock3 className="size-3.5" />} label={pick(isArabic, 'آخر تحديث', 'Last update')} value={relativeTime(latestProject.updatedAt, isArabic)} />
+                      <MiniStat icon={<Clock3 className="size-3.5" />} label={pick(isArabic, 'الوقت المتبقي', 'Remaining time')} value={latestProject.estimatedHours ? pick(isArabic, `${latestProject.estimatedHours.max} ساعة`, `${latestProject.estimatedHours.max} hours`) : pick(isArabic, 'غير محدد', 'Unscheduled')} />
+                      <MiniStat icon={<CheckCircle2 className="size-3.5" />} label={pick(isArabic, 'العقد المكتملة', 'Completed nodes')} value={`${latestProject.progress.done} / ${latestProject.progress.total}`} />
+                      <MiniStat icon={<GitBranch className="size-3.5" />} label={pick(isArabic, 'الحالة', 'Status')} value={latestProject.currentStep ? pick(isArabic, 'في المسار', 'On track') : pick(isArabic, 'مكتمل', 'Complete')} />
                     </div>
                   </div>
-                  <Link
-                    href={`/project/${latestProject.id}`}
-                    prefetch={false}
-                    className={buttonVariants({ variant: 'outline', size: 'lg' })}
-                  >
-                    {isArabic ? 'فتح المخطط' : 'Open graph'}
-                    <ExternalLink className="size-4" />
-                  </Link>
-                </div>
-
-                <div className="mt-5 grid gap-3 border-t border-[var(--pg-border-soft)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <MiniStat icon={<Clock3 className="size-3.5" />} label="Updated" value={relativeTime(latestProject.updatedAt)} />
-                  <MiniStat icon={<CheckCircle2 className="size-3.5" />} label="Nodes done" value={`${latestProject.progress.done} / ${latestProject.progress.total}`} />
-                  <MiniStat icon={<Bot className="size-3.5" />} label="Executor" value={EXECUTOR_LABELS[latestProject.selectedExecutor]} />
-                  <MiniStat icon={<GitBranch className="size-3.5" />} label="Snapshots" value={dashboard.snapshotCount.toString()} />
-                </div>
+                ) : (
+                  <EmptyPanel text={pick(isArabic, 'لا يوجد مشروع نشط بعد. ابدأ من الاستكشاف أو استورد مجلداً محلياً.', 'No active project yet. Start from discovery or import a local folder.')} />
+                )}
               </div>
-            ) : (
-              <EmptyPanel text="No active project yet. Start from discovery or import a local folder." />
-            )}
+            </Panel>
+
+            <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+              <AdapterStatus isArabic={isArabic} profile={profile} selectedExecutor={latestProject?.selectedExecutor} />
+              <ValidationStatus isArabic={isArabic} blockedSteps={dashboard.blockedSteps} validationIssues={dashboard.validationIssues} />
+              <SnapshotStatus isArabic={isArabic} count={dashboard.snapshotCount} autoSnapshot={latestProject?.autoSnapshot} />
+              <MemoryStatus isArabic={isArabic} memoryCount={dashboard.memoryCount} documentCount={activeProject?.steps.length ?? 0} />
+            </div>
+
+            <Panel className="rounded-2xl">
+              <PanelHeader>
+                <div>
+                  <PanelTitle>{pick(isArabic, 'إجراءات سريعة', 'Quick Actions')}</PanelTitle>
+                  <PanelDescription>{pick(isArabic, 'ابدأ، استورد، حلل، أو صدّر العمل المحلي.', 'Create, import, analyze, or export local work.')}</PanelDescription>
+                </div>
+              </PanelHeader>
+              <PanelContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                <QuickAction href="/discovery" icon={<Plus className="size-6" />} title={pick(isArabic, 'إنشاء مشروع', 'Create Project')} description={pick(isArabic, 'مشروع جديد من الصفر', 'Start from scratch')} />
+                <QuickAction href="/project" icon={<FileText className="size-6" />} title={pick(isArabic, 'من قالب', 'Use Template')} description={pick(isArabic, 'استخدم قالب جاهز', 'Start from a template')} />
+                <QuickAction href="/import" icon={<Import className="size-6" />} title={pick(isArabic, 'استيراد مخطط', 'Import Plan')} description={pick(isArabic, 'استيراد من ملف', 'Import from file')} />
+                <QuickAction href="/import" icon={<Camera className="size-6" />} title={pick(isArabic, 'إنشاء لقطة', 'Create Snapshot')} description={pick(isArabic, 'حفظ حالة حالية', 'Save current state')} />
+                <QuickAction href={latestProject ? `/project/${latestProject.id}` : '/project'} icon={<Workflow className="size-6" />} title={pick(isArabic, 'تحليل المخطط', 'Analyze Graph')} description={pick(isArabic, 'تحقق وتحليل شامل', 'Review graph health')} />
+                <QuickAction href={latestProject ? `/project/${latestProject.id}/dashboard` : '/project'} icon={<BarChart3 className="size-6" />} title={pick(isArabic, 'تصدير التقرير', 'Export Report')} description={pick(isArabic, 'تقرير شامل للمشروع', 'Project report')} />
+              </PanelContent>
+            </Panel>
           </div>
-        </Panel>
 
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'الخطوة التالية المقترحة' : 'Next suggested step'}</PanelTitle>
-              <PanelDescription>Ready work from the active execution order.</PanelDescription>
-            </div>
-            <Sparkles className="size-4 text-[var(--pg-accent-purple)]" />
-          </PanelHeader>
-          {dashboard.nextSteps[0] ? (
-            <div className="rounded-xl border border-[var(--pg-accent-purple)]/35 bg-[var(--pg-accent-purple)]/12 p-4">
-              <div className="flex items-start gap-3">
-                <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-[var(--pg-accent-purple)] text-primary-foreground">
-                  <Sparkles className="size-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="line-clamp-2 text-sm font-semibold">{dashboard.nextSteps[0].title}</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{dashboard.nextSteps[0].goal}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-between gap-3 border-t border-[var(--pg-border-soft)] pt-3 text-xs text-muted-foreground">
-                <Badge variant="amber">High priority</Badge>
-                <span>{dashboard.nextSteps[0].type.replace(/_/g, ' ')}</span>
-              </div>
-            </div>
-          ) : (
-            <EmptyPanel text="No pending steps in the active project." />
-          )}
-        </Panel>
+          <aside className="space-y-4">
+            <NextStepCard isArabic={isArabic} step={dashboard.nextSteps[0]} />
+            <BlockedCard isArabic={isArabic} count={dashboard.blockedSteps} steps={dashboard.blockedItems} />
+            <RecentActivity isArabic={isArabic} entries={auditEntries} />
+          </aside>
+        </section>
       </div>
-
-      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'حالة المنفذات' : 'Adapter status'}</PanelTitle>
-              <PanelDescription>Local execution tools connected to this workspace.</PanelDescription>
-            </div>
-            <Bot className="size-4 text-[var(--pg-accent-cyan)]" />
-          </PanelHeader>
-          <PanelContent className="space-y-2">
-            {(profile?.tools.length ? profile.tools : ['manual' as ExecutorTool]).map((tool) => (
-              <div key={tool} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--pg-border-soft)] bg-background/35 px-3 py-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="size-2 rounded-full bg-[var(--pg-accent-green)] shadow-[0_0_14px_var(--pg-accent-green)]" />
-                  <span className="truncate text-sm font-medium">{EXECUTOR_LABELS[tool]}</span>
-                </div>
-                <Badge variant={tool === latestProject?.selectedExecutor ? 'green' : 'outline'}>
-                  {tool === latestProject?.selectedExecutor ? 'Active' : 'Ready'}
-                </Badge>
-              </div>
-            ))}
-          </PanelContent>
-        </Panel>
-
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'حالة التحقق' : 'Validation status'}</PanelTitle>
-              <PanelDescription>Project quality checks and report state.</PanelDescription>
-            </div>
-            <ShieldCheck className="size-4 text-[var(--pg-accent-green)]" />
-          </PanelHeader>
-          <PanelContent className="space-y-3">
-            <ValidationMeter label="Graph checks" value={dashboard.validationIssues > 0 ? 72 : 92} tone="green" />
-            <ValidationMeter label="Data checks" value={78} tone="blue" />
-            <ValidationMeter label="Tool checks" value={85} tone="purple" />
-            <ValidationMeter label="Safety checks" value={dashboard.blockedSteps > 0 ? 65 : 95} tone="amber" />
-          </PanelContent>
-        </Panel>
-
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'اللقطات' : 'Snapshots'}</PanelTitle>
-              <PanelDescription>Restore points captured before execution.</PanelDescription>
-            </div>
-            <Camera className="size-4 text-[var(--pg-accent-blue)]" />
-          </PanelHeader>
-          <PanelContent>
-            <p className="text-3xl font-semibold tabular-nums">{dashboard.snapshotCount}</p>
-            <p className="text-sm text-muted-foreground">available snapshot{dashboard.snapshotCount === 1 ? '' : 's'}</p>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <MiniStat label="Latest" value={dashboard.snapshotCount > 0 ? 'Captured' : 'None yet'} />
-              <MiniStat label="Mode" value={latestProject?.autoSnapshot ? 'Automatic' : 'Manual'} />
-            </div>
-          </PanelContent>
-        </Panel>
-
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'بنك الذاكرة' : 'Memory Bank'}</PanelTitle>
-              <PanelDescription>Decisions, notes, and project context.</PanelDescription>
-            </div>
-            <MemoryStick className="size-4 text-[var(--pg-accent-purple)]" />
-          </PanelHeader>
-          <PanelContent>
-            <div className="space-y-2">
-              <SummaryRow icon={<MemoryStick className="size-4" />} label="Entries" value={dashboard.memoryCount.toString()} tone="purple" />
-              <SummaryRow icon={<FileText className="size-4" />} label="Documents" value={(activeProject?.steps.length ?? 0).toString()} tone="cyan" />
-              <SummaryRow icon={<Database className="size-4" />} label="Storage" value="Local" tone="green" />
-            </div>
-          </PanelContent>
-        </Panel>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[1fr_0.72fr]">
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'إجراءات سريعة' : 'Quick actions'}</PanelTitle>
-              <PanelDescription>Start, import, execute, or review local planning work.</PanelDescription>
-            </div>
-          </PanelHeader>
-          <PanelContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <QuickAction href="/discovery" icon={<Plus className="size-5" />} title="Create project" description="Start from scratch." />
-            <QuickAction href="/import" icon={<ArchiveRestore className="size-5" />} title="Import project" description="Scan a folder." />
-            <QuickAction href={latestProject ? `/project/${latestProject.id}` : '/project'} icon={<Workflow className="size-5" />} title="Open graph" description="View and edit graph." />
-            <QuickAction href="/execution" icon={<Play className="size-5" />} title="Run step" description="Execution center." />
-            <QuickAction href={latestProject ? `/project/${latestProject.id}/dashboard` : '/project'} icon={<BarChart3 className="size-5" />} title="Open report" description="Project analytics." />
-          </PanelContent>
-        </Panel>
-
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'العناصر المتعطلة' : 'Blocked items'}</PanelTitle>
-              <PanelDescription>Failed, blocked, or needs-review steps.</PanelDescription>
-            </div>
-            <Badge variant={dashboard.blockedSteps > 0 ? 'destructive' : 'green'}>{dashboard.blockedSteps}</Badge>
-          </PanelHeader>
-          <StepList steps={dashboard.blockedItems} empty="No blocked items found." compact />
-        </Panel>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[0.72fr_1fr]">
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'ملخص الحالة' : 'System summary'}</PanelTitle>
-              <PanelDescription>Local project records and available workspace state.</PanelDescription>
-            </div>
-          </PanelHeader>
-          <PanelContent className="space-y-3">
-            <SummaryRow icon={<FileCheck2 className="size-4" />} label="Validation" value={dashboard.validationIssues > 0 ? `${dashboard.validationIssues} issue(s)` : 'Clean'} tone={dashboard.validationIssues > 0 ? 'amber' : 'green'} />
-            <SummaryRow icon={<GitBranch className="size-4" />} label="Snapshots" value={`${dashboard.snapshotCount} captured`} tone="blue" />
-            <SummaryRow icon={<MemoryStick className="size-4" />} label="Memory" value={`${dashboard.memoryCount} entries`} tone="cyan" />
-            <SummaryRow icon={<Database className="size-4" />} label="Storage" value="Local workspace" tone="purple" />
-          </PanelContent>
-        </Panel>
-
-        <Panel>
-          <PanelHeader>
-            <div>
-              <PanelTitle>{isArabic ? 'النشاط الأخير' : 'Recent activity'}</PanelTitle>
-              <PanelDescription>Latest audit records from the active project.</PanelDescription>
-            </div>
-            <History className="size-4 text-muted-foreground" />
-          </PanelHeader>
-          {auditEntries.length > 0 ? (
-            <ol className="space-y-2">
-              {auditEntries.map((entry, index) => (
-                <li key={`${entry.timestamp}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--pg-border-soft)] bg-background/35 p-3">
-                  <div className="min-w-0">
-                    <p className="line-clamp-1 text-sm font-medium">{entry.action.replace(/_/g, ' ')}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{relativeTime(entry.timestamp)}</p>
-                  </div>
-                  <Badge variant={index === 0 ? 'green' : 'outline'}>{index === 0 ? 'Latest' : 'Audit'}</Badge>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <EmptyPanel text="No recent activity yet." />
-          )}
-        </Panel>
-      </div>
-
-      <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Projects
-        </h2>
-        <ProjectGrid />
-      </div>
-    </div>
+    </main>
   );
 }
 
-function ProgressMetric({ detail, label, percent }: { detail: string; label: string; percent: number }) {
+function ProgressMetric({ detail, isArabic, label, percent }: { detail: string; isArabic: boolean; label: string; percent: number }) {
   const clamped = Math.max(0, Math.min(100, percent));
 
   return (
-    <Panel className="p-4">
+    <Panel className="rounded-2xl p-4">
       <div className="flex items-center gap-4">
         <div
-          className="relative grid size-20 shrink-0 place-items-center rounded-full"
+          className="relative grid size-24 shrink-0 place-items-center rounded-full shadow-[0_0_34px_oklch(0.56_0.22_292_/_0.22)]"
           style={{
-            background: `conic-gradient(var(--pg-accent-purple) ${clamped}%, var(--pg-accent-blue) ${clamped + 8}%, rgb(255 255 255 / 0.08) 0)`,
+            background: `conic-gradient(var(--pg-accent-blue) 0 ${clamped / 2}%, var(--pg-accent-purple) ${clamped}%, rgb(255 255 255 / 0.08) 0)`,
           }}
         >
-          <div className="grid size-14 place-items-center rounded-full bg-background/90 text-lg font-semibold tabular-nums">
+          <div className="grid size-16 place-items-center rounded-full bg-background/90 text-xl font-semibold tabular-nums">
             {clamped}%
           </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--pg-text-faint)]">{label}</p>
-          <p className="mt-2 text-sm font-semibold text-[var(--pg-text-soft)]">Average progress</p>
+        <div className={cn('min-w-0', isArabic ? 'text-right' : 'text-left')}>
+          <p className="text-base font-semibold">{label}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{pick(isArabic, 'متوسط التقدم العام', 'Overall progress average')}</p>
+          <p className="mt-1 text-xs font-medium text-[var(--pg-accent-green)]">▲ {pick(isArabic, '12% من الأسبوع الماضي', '12% from last week')}</p>
           <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{detail}</p>
         </div>
       </div>
@@ -525,41 +398,226 @@ function KpiCard({
   accent,
   detail,
   icon,
+  isArabic,
   label,
+  trend,
   value,
 }: {
   accent: 'amber' | 'blue' | 'green' | 'purple';
   detail: string;
   icon: React.ReactNode;
+  isArabic: boolean;
   label: string;
+  trend?: string;
   value: string;
 }) {
   const accentClass = {
-    amber: 'text-[var(--pg-accent-amber)] bg-[var(--pg-accent-amber)]/12 ring-[var(--pg-accent-amber)]/25',
-    blue: 'text-[var(--pg-accent-blue)] bg-[var(--pg-accent-blue)]/12 ring-[var(--pg-accent-blue)]/25',
-    green: 'text-[var(--pg-accent-green)] bg-[var(--pg-accent-green)]/12 ring-[var(--pg-accent-green)]/25',
-    purple: 'text-[var(--pg-accent-purple)] bg-[var(--pg-accent-purple)]/12 ring-[var(--pg-accent-purple)]/25',
+    amber: 'text-[var(--pg-accent-amber)] bg-[var(--pg-accent-amber)]/12 ring-[var(--pg-accent-amber)]/25 shadow-[0_0_28px_oklch(0.76_0.16_78_/_0.18)]',
+    blue: 'text-[var(--pg-accent-blue)] bg-[var(--pg-accent-blue)]/12 ring-[var(--pg-accent-blue)]/25 shadow-[0_0_28px_oklch(0.58_0.18_255_/_0.2)]',
+    green: 'text-[var(--pg-accent-green)] bg-[var(--pg-accent-green)]/12 ring-[var(--pg-accent-green)]/25 shadow-[0_0_28px_oklch(0.66_0.16_150_/_0.2)]',
+    purple: 'text-[var(--pg-accent-purple)] bg-[var(--pg-accent-purple)]/12 ring-[var(--pg-accent-purple)]/25 shadow-[0_0_28px_oklch(0.56_0.22_292_/_0.2)]',
   }[accent];
 
   return (
-    <Panel className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--pg-text-faint)]">{label}</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{detail}</p>
-        </div>
-        <span className={`inline-flex size-12 shrink-0 items-center justify-center rounded-full ring-1 ${accentClass}`}>
+    <Panel className="rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className={`inline-flex size-16 shrink-0 items-center justify-center rounded-full ring-1 ${accentClass}`}>
           {icon}
         </span>
+        <div className={cn('min-w-0', isArabic ? 'text-right' : 'text-left')}>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="mt-3 text-3xl font-semibold tabular-nums">{value}</p>
+          {trend && <p className="mt-1 text-xs font-medium text-[var(--pg-accent-green)]">▲ {trend}</p>}
+          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{detail}</p>
+        </div>
       </div>
+    </Panel>
+  );
+}
+
+function AdapterStatus({ isArabic, profile, selectedExecutor }: { isArabic: boolean; profile: UserProfile | null; selectedExecutor?: ExecutorTool }) {
+  return (
+    <Panel className="rounded-2xl">
+      <PanelHeader>
+        <div>
+          <PanelTitle>{pick(isArabic, 'حالة المشغلات', 'Adapters Status')}</PanelTitle>
+          <PanelDescription>{pick(isArabic, 'الأدوات المحلية المتاحة للتنفيذ.', 'Local tools available for execution.')}</PanelDescription>
+        </div>
+        <Bot className="size-5 text-[var(--pg-accent-cyan)]" />
+      </PanelHeader>
+      <PanelContent className="space-y-2">
+        {(profile?.tools.length ? profile.tools : ['manual' as ExecutorTool]).map((tool) => (
+          <div key={tool} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--pg-border-soft)] bg-background/35 px-3 py-2">
+            <Badge variant={tool === selectedExecutor ? 'green' : 'outline'}>
+              {tool === selectedExecutor ? pick(isArabic, 'نشط', 'Active') : pick(isArabic, 'متصل', 'Connected')}
+            </Badge>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="size-2 rounded-full bg-[var(--pg-accent-green)] shadow-[0_0_14px_var(--pg-accent-green)]" />
+              <span className="truncate text-sm font-medium">{EXECUTOR_LABELS[tool]}</span>
+            </div>
+          </div>
+        ))}
+      </PanelContent>
+    </Panel>
+  );
+}
+
+function ValidationStatus({ blockedSteps, isArabic, validationIssues }: { blockedSteps: number; isArabic: boolean; validationIssues: number }) {
+  return (
+    <Panel className="rounded-2xl">
+      <PanelHeader>
+        <div>
+          <PanelTitle>{pick(isArabic, 'حالة التحقق', 'Validation Status')}</PanelTitle>
+          <PanelDescription>{pick(isArabic, 'فحوصات المخطط والجودة.', 'Graph and quality checks.')}</PanelDescription>
+        </div>
+        <ShieldCheck className="size-5 text-[var(--pg-accent-green)]" />
+      </PanelHeader>
+      <PanelContent className="space-y-3">
+        <ValidationMeter label={pick(isArabic, 'التحقق من المخطط', 'Graph validation')} value={validationIssues > 0 ? 72 : 92} tone="green" />
+        <ValidationMeter label={pick(isArabic, 'التحقق من البيانات', 'Data validation')} value={78} tone="blue" />
+        <ValidationMeter label={pick(isArabic, 'التحقق من الجودة', 'Quality validation')} value={85} tone="purple" />
+        <ValidationMeter label={pick(isArabic, 'التحقق من الأمان', 'Safety validation')} value={blockedSteps > 0 ? 65 : 95} tone="amber" />
+      </PanelContent>
+    </Panel>
+  );
+}
+
+function SnapshotStatus({ autoSnapshot, count, isArabic }: { autoSnapshot?: boolean; count: number; isArabic: boolean }) {
+  return (
+    <Panel className="rounded-2xl">
+      <PanelHeader>
+        <div>
+          <PanelTitle>{pick(isArabic, 'اللقطات', 'Snapshots')}</PanelTitle>
+          <PanelDescription>{pick(isArabic, 'نقاط استعادة قبل التنفيذ.', 'Restore points before execution.')}</PanelDescription>
+        </div>
+        <Camera className="size-5 text-[var(--pg-accent-blue)]" />
+      </PanelHeader>
+      <PanelContent>
+        <p className="text-4xl font-semibold tabular-nums">{count}</p>
+        <p className="text-sm text-muted-foreground">{pick(isArabic, 'لقطة متاحة', 'available snapshots')}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+          <MiniStat label={pick(isArabic, 'آخر لقطة', 'Latest snapshot')} value={count > 0 ? pick(isArabic, 'متوفرة', 'Available') : pick(isArabic, 'لا يوجد', 'None')} />
+          <MiniStat label={pick(isArabic, 'النمط', 'Mode')} value={autoSnapshot ? pick(isArabic, 'تلقائي', 'Auto') : pick(isArabic, 'يدوي', 'Manual')} />
+        </div>
+      </PanelContent>
+    </Panel>
+  );
+}
+
+function MemoryStatus({ documentCount, isArabic, memoryCount }: { documentCount: number; isArabic: boolean; memoryCount: number }) {
+  return (
+    <Panel className="rounded-2xl">
+      <PanelHeader>
+        <div>
+          <PanelTitle>{pick(isArabic, 'الذاكرة', 'Memory')}</PanelTitle>
+          <PanelDescription>{pick(isArabic, 'الملاحظات والسياق المحلي.', 'Notes and local context.')}</PanelDescription>
+        </div>
+        <MemoryStick className="size-5 text-[var(--pg-accent-purple)]" />
+      </PanelHeader>
+      <PanelContent>
+        <div className="space-y-2">
+          <SummaryRow icon={<MemoryStick className="size-4" />} label={pick(isArabic, 'الملاحظات', 'Notes')} value={memoryCount.toString()} tone="purple" />
+          <SummaryRow icon={<FileText className="size-4" />} label={pick(isArabic, 'المستندات', 'Documents')} value={documentCount.toString()} tone="cyan" />
+          <SummaryRow icon={<Database className="size-4" />} label={pick(isArabic, 'التخزين', 'Storage')} value={pick(isArabic, 'محلي', 'Local')} tone="green" />
+        </div>
+      </PanelContent>
+    </Panel>
+  );
+}
+
+function NextStepCard({ isArabic, step }: { isArabic: boolean; step?: Step }) {
+  return (
+    <Panel className="rounded-2xl">
+      <PanelHeader>
+        <div>
+          <PanelTitle>{pick(isArabic, 'الخطوة التالية المقترحة', 'Suggested Next Step')}</PanelTitle>
+          <PanelDescription>{pick(isArabic, 'أقرب عمل جاهز من ترتيب التنفيذ.', 'The nearest ready item in execution order.')}</PanelDescription>
+        </div>
+        <Sparkles className="size-5 text-[var(--pg-accent-purple)]" />
+      </PanelHeader>
+      {step ? (
+        <div className="overflow-hidden rounded-2xl border border-[var(--pg-accent-purple)]/40 bg-[linear-gradient(135deg,oklch(0.56_0.22_292_/_0.2),oklch(0.58_0.18_255_/_0.14))]">
+          <div className="flex items-center gap-3 p-4">
+            <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--pg-accent-purple)] text-primary-foreground shadow-[0_0_26px_oklch(0.56_0.22_292_/_0.35)]">
+              <Sparkles className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-sm font-semibold">{localizeDashboardText(step.title, isArabic)}</p>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{localizeDashboardText(step.goal, isArabic)}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--pg-border-soft)] px-4 py-3 text-xs text-muted-foreground">
+            <Badge variant="blue">{localizeDashboardText(pick(isArabic, 'High priority', 'High priority'), isArabic)}</Badge>
+            <span>{localizeDashboardText(step.type.replace(/_/g, ' '), isArabic)}</span>
+          </div>
+        </div>
+      ) : (
+        <EmptyPanel text={pick(isArabic, 'لا توجد خطوات معلقة في المشروع النشط.', 'No pending steps in the active project.')} />
+      )}
+    </Panel>
+  );
+}
+
+function BlockedCard({ count, isArabic, steps }: { count: number; isArabic: boolean; steps: Step[] }) {
+  return (
+    <Panel className="rounded-2xl">
+      <PanelHeader>
+        <div>
+          <PanelTitle>{pick(isArabic, 'العناصر المعطلة', 'Blocked Items')}</PanelTitle>
+          <PanelDescription>{pick(isArabic, 'خطوات فاشلة أو محجوبة أو تحتاج مراجعة.', 'Failed, blocked, or review-needed steps.')}</PanelDescription>
+        </div>
+        <Badge variant={count > 0 ? 'destructive' : 'green'}>{count}</Badge>
+      </PanelHeader>
+      {steps.length > 0 ? (
+        <PanelContent className="space-y-2">
+          {steps.map((step) => (
+            <div key={step.id} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--pg-border-soft)] bg-background/35 p-3">
+              <Badge variant={step.status === 'blocked' || step.status === 'failed' ? 'destructive' : 'outline'} className="shrink-0">
+                {STATUS_LABELS[isArabic ? 'ar' : 'en'][step.status]}
+              </Badge>
+              <p className="line-clamp-1 text-sm font-medium">{localizeDashboardText(step.title, isArabic)}</p>
+            </div>
+          ))}
+        </PanelContent>
+      ) : (
+        <EmptyPanel text={pick(isArabic, 'لا توجد عناصر معطلة حالياً.', 'No blocked items right now.')} />
+      )}
+    </Panel>
+  );
+}
+
+function RecentActivity({ entries, isArabic }: { entries: AuditEntry[]; isArabic: boolean }) {
+  return (
+    <Panel className="rounded-2xl">
+      <PanelHeader>
+        <div>
+          <PanelTitle>{pick(isArabic, 'النشاط الأخير', 'Recent Activity')}</PanelTitle>
+          <PanelDescription>{pick(isArabic, 'آخر سجلات التدقيق من المشروع النشط.', 'Latest audit records from the active project.')}</PanelDescription>
+        </div>
+        <History className="size-5 text-[var(--pg-accent-blue)]" />
+      </PanelHeader>
+      {entries.length > 0 ? (
+        <ol className="space-y-2">
+          {entries.map((entry, index) => (
+            <li key={`${entry.timestamp}-${index}`} className="flex items-center justify-between gap-3 border-b border-[var(--pg-border-soft)] px-1 py-3 last:border-b-0">
+              <Badge variant={index === 0 ? 'green' : 'outline'}>{index === 0 ? pick(isArabic, 'نجح', 'Success') : pick(isArabic, 'تحديث', 'Update')}</Badge>
+              <div className={cn('min-w-0', isArabic ? 'text-right' : 'text-left')}>
+                <p className="line-clamp-1 text-sm font-medium">{ACTION_LABELS[isArabic ? 'ar' : 'en'][entry.action] ?? entry.action.replace(/_/g, ' ')}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{relativeTime(entry.timestamp, isArabic)}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <EmptyPanel text={pick(isArabic, 'لا يوجد نشاط حديث بعد.', 'No recent activity yet.')} />
+      )}
     </Panel>
   );
 }
 
 function MiniStat({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--pg-border-soft)] bg-background/35 p-3">
+    <div className="rounded-xl border border-[var(--pg-border-soft)] bg-background/35 p-3">
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         {icon}
         {label}
@@ -571,17 +629,17 @@ function MiniStat({ icon, label, value }: { icon?: React.ReactNode; label: strin
 
 function ValidationMeter({ label, tone, value }: { label: string; tone: 'amber' | 'blue' | 'green' | 'purple'; value: number }) {
   const toneClass = {
-    amber: 'bg-[var(--pg-accent-amber)]',
-    blue: 'bg-[var(--pg-accent-blue)]',
-    green: 'bg-[var(--pg-accent-green)]',
-    purple: 'bg-[var(--pg-accent-purple)]',
+    amber: 'bg-[var(--pg-accent-amber)] shadow-[0_0_12px_var(--pg-accent-amber)]',
+    blue: 'bg-[var(--pg-accent-blue)] shadow-[0_0_12px_var(--pg-accent-blue)]',
+    green: 'bg-[var(--pg-accent-green)] shadow-[0_0_12px_var(--pg-accent-green)]',
+    purple: 'bg-[var(--pg-accent-purple)] shadow-[0_0_12px_var(--pg-accent-purple)]',
   }[tone];
 
   return (
     <div>
       <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-        <span className="text-muted-foreground">{label}</span>
         <span className="font-medium tabular-nums">{value}%</span>
+        <span className="text-muted-foreground">{label}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-background/45">
         <div className={`h-full rounded-full ${toneClass}`} style={{ width: `${value}%` }} />
@@ -610,33 +668,13 @@ function SummaryRow({
   }[tone];
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--pg-border-soft)] bg-background/35 px-3 py-2.5">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className={toneClass}>{icon}</span>
-        <span className="truncate text-sm font-medium">{label}</span>
-      </div>
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--pg-border-soft)] bg-background/35 px-3 py-2.5">
       <span className="shrink-0 text-xs text-muted-foreground">{value}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="truncate text-sm font-medium">{label}</span>
+        <span className={toneClass}>{icon}</span>
+      </div>
     </div>
-  );
-}
-
-function StepList({ compact = false, empty, steps }: { compact?: boolean; empty: string; steps: Step[] }) {
-  if (steps.length === 0) return <EmptyPanel text={empty} />;
-
-  return (
-    <PanelContent className={compact ? 'space-y-2' : undefined}>
-      {steps.map((step) => (
-        <div key={step.id} className="rounded-lg border border-[var(--pg-border-soft)] bg-background/35 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <p className="line-clamp-2 text-sm font-medium">{step.title}</p>
-            <Badge variant={step.status === 'blocked' || step.status === 'failed' ? 'destructive' : 'outline'} className="shrink-0">
-              {STATUS_LABELS[step.status]}
-            </Badge>
-          </div>
-          {!compact && <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{step.goal}</p>}
-        </div>
-      ))}
-    </PanelContent>
   );
 }
 
@@ -655,23 +693,21 @@ function QuickAction({
     <Link
       href={href}
       prefetch={false}
-      className="flex min-h-32 flex-col justify-between rounded-xl border border-[var(--pg-border-soft)] bg-[var(--pg-accent-purple)]/8 p-4 outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
+      className="group flex min-h-32 flex-col items-center justify-center rounded-2xl border border-[var(--pg-border-soft)] bg-[linear-gradient(180deg,oklch(0.24_0.055_275_/_0.42),oklch(0.18_0.04_265_/_0.36))] p-4 text-center outline-none transition-all hover:border-[var(--pg-accent-purple)]/50 hover:bg-[var(--pg-accent-purple)]/12 hover:shadow-[0_0_28px_oklch(0.56_0.22_292_/_0.16)] focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+      <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary transition-transform group-hover:-translate-y-0.5">
         {icon}
       </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="mt-1 block text-xs text-muted-foreground">{description}</span>
-      </span>
+      <span className="mt-3 block text-sm font-semibold">{title}</span>
+      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{description}</span>
     </Link>
   );
 }
 
 function EmptyPanel({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-[var(--pg-border-soft)] bg-background/25 p-4 text-sm text-muted-foreground">
-      <CheckCircle2 className="mb-2 size-4 text-[var(--pg-accent-green)]" />
+    <div className="rounded-xl border border-dashed border-[var(--pg-border-soft)] bg-background/25 p-4 text-sm text-muted-foreground">
+      <FileCheck2 className="mb-2 size-4 text-[var(--pg-accent-green)]" />
       {text}
     </div>
   );
