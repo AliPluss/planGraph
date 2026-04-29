@@ -27,3 +27,21 @@
 - الأرقام من `01` إلى `17` تحفظ ترتيب القراءة داخل وثائق الرؤية.
 - الصور التي تنتهي بـ `v1` و `v2` هي بدائل تصميمية لنفس الصفحة، وليست تكرارًا خاطئًا.
 - الأفضل في التنفيذ اعتماد نسخة واحدة كتصميم أساسي، وترك الأخرى كمرجع داخل الوثائق.
+
+## Visual Source-of-Truth Mapping
+
+Use the screenshots in `docs/vision/assets` as the visual source of truth. Match only the relevant screen pair for the current session before moving to the next screen.
+
+| Source screenshots | Target screen |
+|---|---|
+| `01-dashboard-overview-v1.png`<br>`08-dashboard-overview-v2.png` | Dashboard / الرئيسية |
+| `02-projects-templates-v1.png`<br>`10-projects-templates-v2.png` | Projects + Templates / المشاريع والقوالب |
+| `03-ai-planning-chat-v1.png`<br>`11-ai-planning-chat-v2.png` | AI Planning Chat / مساعد التخطيط الذكي |
+| `04-graph-workspace-v1.png`<br>`09-graph-workspace-v2.png`<br>`06-ai-model-graph-map.png` | Graph Workspace / مساحة المخطط |
+| `05-execution-center-v1.png`<br>`12-execution-center-v2.png` | Execution Center / مركز التنفيذ |
+| `07-node-system.png` | Node Cards / نظام العقد |
+| `13-library-memory.png` | Library + Memory / المكتبة والذاكرة |
+| `14-snapshots-import.png` | Snapshots + Import / اللقطات والاستيراد |
+| `15-validation-audit-reports.png` | Validation + Audit + Reports / التحقق والتدقيق والتقارير |
+| `16-settings-workspace.png` | Settings / الإعدادات ومساحة العمل |
+| `17-ai-model-graph-vision.png` | Product Vision / الرؤية العامة للنظام |
