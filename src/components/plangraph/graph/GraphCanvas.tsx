@@ -6,12 +6,14 @@ import ReactFlow, {
   BackgroundVariant,
   Controls,
   MiniMap,
+  Panel,
   MarkerType,
   type Edge as RFEdge,
   type Node as RFNode,
   type NodeTypes,
 } from 'reactflow';
 import dagre from 'dagre';
+import { CheckCircle2, Circle, GitBranch, Layers3, Move, Plus, Workflow } from 'lucide-react';
 import 'reactflow/dist/style.css';
 import type { Project, Step } from '@/core/types';
 import StepNode, { type StepNodeData } from './StepNode';
@@ -22,10 +24,10 @@ type GraphNodeData = StepNodeData | RootNodeData | DeliveryNodeData;
 
 const ROOT_ID = 'node_root';
 const DELIVERY_ID = 'node_delivery';
-const STEP_WIDTH = 220;
-const STEP_HEIGHT = 88;
-const SYNTH_WIDTH = 260;
-const SYNTH_HEIGHT = 92;
+const STEP_WIDTH = 280;
+const STEP_HEIGHT = 132;
+const SYNTH_WIDTH = 300;
+const SYNTH_HEIGHT = 144;
 
 const NODE_TYPES: NodeTypes = {
   stepNode: StepNode,
@@ -73,11 +75,41 @@ export function GraphCanvas({ project, selectedStep, locale, onSelectStep }: Gra
       maxZoom={2}
       proOptions={{ hideAttribution: true }}
     >
+      <Panel position="top-left" className="nodrag nopan">
+        <GraphNodeRail
+          project={project}
+          selectedStepId={selectedStep?.id ?? null}
+          locale={locale}
+          onSelectStep={onSelectStep}
+        />
+      </Panel>
+      <Panel position="top-center" className="nodrag nopan hidden lg:block">
+        <div className="flex items-center gap-2 rounded-2xl border border-[var(--pg-border-soft)] bg-background/54 p-1.5 shadow-[0_18px_60px_oklch(0.04_0.02_265_/_0.34),inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-2xl">
+          <button
+            type="button"
+            disabled
+            className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-xl border border-[var(--pg-border-soft)] bg-background/30 px-3 text-xs font-semibold text-muted-foreground/55"
+            title={locale === 'ar' ? 'سيتم تفعيل وضع التحريك في جلسة لاحقة' : 'Pan mode will be enabled in a later session'}
+          >
+            <Move className="size-4" />
+            {locale === 'ar' ? 'تحريك' : 'Pan'}
+          </button>
+          <button
+            type="button"
+            disabled
+            className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-xl border border-[var(--pg-border-soft)] bg-background/30 px-3 text-xs font-semibold text-muted-foreground/55"
+            title={locale === 'ar' ? 'التخطيط التلقائي مطبق عند تحميل المخطط' : 'Auto layout is applied when the graph loads'}
+          >
+            <Workflow className="size-4" />
+            {locale === 'ar' ? 'تخطيط تلقائي' : 'Auto layout'}
+          </button>
+        </div>
+      </Panel>
       <Background
         variant={BackgroundVariant.Dots}
-        gap={24}
-        size={1.25}
-        color="oklch(0.72 0.05 265 / 34%)"
+        gap={20}
+        size={1.05}
+        color="oklch(0.72 0.05 265 / 25%)"
       />
       <Controls
         className="pg-graph-controls"
@@ -108,6 +140,100 @@ export function GraphCanvas({ project, selectedStep, locale, onSelectStep }: Gra
   );
 }
 
+function GraphNodeRail({
+  project,
+  selectedStepId,
+  locale,
+  onSelectStep,
+}: {
+  project: Project;
+  selectedStepId: string | null;
+  locale: 'en' | 'ar';
+  onSelectStep: (step: Step | null) => void;
+}) {
+  const labels = {
+    en: {
+      title: 'Node Types',
+      graph: 'Main graph',
+      custom: 'Custom node',
+      disabled: 'Custom nodes are planned for a later session',
+      done: 'done',
+    },
+    ar: {
+      title: 'أنواع العقد',
+      graph: 'المخطط الرئيسي',
+      custom: 'عقدة مخصصة',
+      disabled: 'إضافة العقد المخصصة ستأتي في جلسة لاحقة',
+      done: 'مكتملة',
+    },
+  }[locale];
+
+  return (
+    <aside
+      dir={locale === 'ar' ? 'rtl' : 'ltr'}
+      className="hidden w-64 rounded-2xl border border-[var(--pg-border-soft)] bg-background/58 p-3 shadow-[0_18px_60px_oklch(0.04_0.02_265_/_0.36),inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-2xl xl:block"
+    >
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Layers3 className="size-4 text-[var(--pg-accent-purple)]" />
+          {labels.title}
+        </div>
+        <span className="rounded-full border border-[var(--pg-border-soft)] bg-background/30 px-2 py-0.5 text-[10px] text-muted-foreground">
+          {project.steps.length}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => onSelectStep(null)}
+        className={`mb-2 flex h-9 w-full items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition ${
+          selectedStepId === null
+            ? 'border-[var(--pg-accent-purple)] bg-[var(--pg-accent-purple)]/16 text-white'
+            : 'border-[var(--pg-border-soft)] bg-background/24 text-muted-foreground hover:bg-muted/35 hover:text-foreground'
+        }`}
+      >
+        <GitBranch className="size-4" />
+        {labels.graph}
+      </button>
+      <div className="max-h-[56vh] space-y-1.5 overflow-y-auto pe-1">
+        {project.steps.map((step, index) => {
+          const done = step.status === 'done';
+          return (
+            <button
+              type="button"
+              key={step.id}
+              onClick={() => onSelectStep(step)}
+              className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-start text-xs transition ${
+                selectedStepId === step.id
+                  ? 'border-[var(--pg-accent-blue)] bg-[var(--pg-accent-blue)]/14 text-white shadow-[0_0_18px_oklch(0.58_0.18_255_/_0.18)]'
+                  : 'border-[var(--pg-border-soft)] bg-background/18 text-muted-foreground hover:border-[var(--pg-border-strong)] hover:text-foreground'
+              }`}
+            >
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-background/40 text-[var(--pg-accent-cyan)]">
+                {done ? <CheckCircle2 className="size-4 text-[var(--pg-accent-green)]" /> : <Circle className="size-3" />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{step.title}</span>
+                <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+                  ID: {String(index + 1).padStart(2, '0')} · {done ? labels.done : step.type}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        disabled
+        title={labels.disabled}
+        className="mt-3 flex h-10 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-[var(--pg-border-soft)] bg-background/20 text-xs font-semibold text-muted-foreground/55"
+      >
+        <Plus className="size-4" />
+        {labels.custom}
+      </button>
+    </aside>
+  );
+}
+
 function buildGraph(
   project: Project,
   selectedStepId: string | null,
@@ -118,8 +244,8 @@ function buildGraph(
   const firstSteps = project.steps.filter((step) => step.dependsOn.length === 0);
   const dependedOn = new Set(project.edges.map((edge) => edge.source));
   const lastSteps = project.steps.filter((step) => !dependedOn.has(step.id));
-  const edgeStyle = { stroke: 'oklch(0.72 0.05 265 / 46%)', strokeWidth: 1.6 };
-  const edgeMarker = { type: MarkerType.ArrowClosed, color: 'oklch(0.72 0.05 265 / 46%)' };
+  const edgeStyle = { stroke: 'oklch(0.78 0.045 265 / 56%)', strokeWidth: 2 };
+  const edgeMarker = { type: MarkerType.ArrowClosed, color: 'oklch(0.78 0.045 265 / 56%)' };
 
   const nodes: RFNode<GraphNodeData>[] = [
     {
@@ -182,7 +308,7 @@ function layoutVertical(
 ): { nodes: RFNode<GraphNodeData>[]; edges: RFEdge[] } {
   const graph = new dagre.graphlib.Graph();
   graph.setDefaultEdgeLabel(() => ({}));
-  graph.setGraph({ rankdir: 'TB', ranksep: 80, nodesep: 40 });
+  graph.setGraph({ rankdir: 'TB', ranksep: 86, nodesep: 56 });
 
   for (const node of nodes) {
     const width = node.id === ROOT_ID || node.id === DELIVERY_ID ? SYNTH_WIDTH : STEP_WIDTH;

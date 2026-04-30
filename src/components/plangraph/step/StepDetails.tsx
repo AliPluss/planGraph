@@ -50,6 +50,91 @@ const PROMPT_TABS: Array<{ key: keyof Step['prompts']; label: string }> = [
   { key: 'manual', label: 'Manual' },
 ];
 
+const panelCopy = {
+  en: {
+    node: 'Execution node',
+    overview: 'Overview',
+    prompt: 'Prompt',
+    status: 'Status',
+    markdown: 'Markdown',
+    close: 'Close step details',
+    description: 'Description',
+    descriptionHint: 'What this node must accomplish before execution can move on.',
+    skills: 'Skills',
+    skillsHint: 'Execution capability, dependencies, and affected nodes.',
+    stepType: 'Step type',
+    executor: 'Executor',
+    dependsOn: 'Depends on',
+    affects: 'Affects',
+    none: 'None',
+    noDownstream: 'No downstream nodes',
+    libraryHint: 'Packages or APIs this step expects the executor to consider.',
+    required: 'Required',
+    optional: 'Optional',
+    noLibraries: 'No libraries specified.',
+    tools: 'Tools and files',
+    toolsHint: 'Prompt targets, context files, and guarded files for this node.',
+    context: 'Context',
+    protected: 'Protected',
+    noContext: 'No context files',
+    noProtected: 'No protected files',
+    stepMarkdown: 'Step markdown',
+    report: 'Report',
+    criteriaHint: 'Checklist used to decide whether the executor output is complete.',
+    noCriteria: 'No success criteria defined.',
+    restrictionsHint: 'Notes and guardrails that must stay true while executing.',
+    promptTargets: 'Prompt targets',
+    promptHint: 'Copy the active executor prompt or switch tabs to use another generated prompt.',
+    statusHint: 'Run the step, record review state, or reopen completed work.',
+    lastUpdated: 'Last updated',
+    notStarted: 'Not started',
+    saved: 'saved',
+    memoryHint: 'Notes, decisions, issues, and conventions linked to this node.',
+    loadingMarkdown: 'Loading markdown...',
+  },
+  ar: {
+    node: 'عقدة تنفيذ',
+    overview: 'نظرة عامة',
+    prompt: 'الموجه',
+    status: 'الحالة',
+    markdown: 'Markdown',
+    close: 'إغلاق تفاصيل الخطوة',
+    description: 'الوصف',
+    descriptionHint: 'ما يجب أن تنجزه هذه العقدة قبل انتقال التنفيذ.',
+    skills: 'المهارات',
+    skillsHint: 'قدرات التنفيذ والاعتماديات والعقد المتأثرة.',
+    stepType: 'نوع الخطوة',
+    executor: 'المشغل',
+    dependsOn: 'تعتمد على',
+    affects: 'تؤثر في',
+    none: 'لا يوجد',
+    noDownstream: 'لا توجد عقد لاحقة',
+    libraryHint: 'الحزم أو الواجهات التي يجب على المشغل مراعاتها.',
+    required: 'مطلوبة',
+    optional: 'اختيارية',
+    noLibraries: 'لا توجد مكتبات محددة.',
+    tools: 'الأدوات والملفات',
+    toolsHint: 'أهداف الموجه وملفات السياق والملفات المحمية لهذه العقدة.',
+    context: 'السياق',
+    protected: 'محمية',
+    noContext: 'لا توجد ملفات سياق',
+    noProtected: 'لا توجد ملفات محمية',
+    stepMarkdown: 'ملف الخطوة',
+    report: 'التقرير',
+    criteriaHint: 'قائمة التحقق لتحديد اكتمال مخرجات المشغل.',
+    noCriteria: 'لا توجد معايير نجاح محددة.',
+    restrictionsHint: 'ملاحظات وقيود يجب الحفاظ عليها أثناء التنفيذ.',
+    promptTargets: 'أهداف الموجه',
+    promptHint: 'انسخ موجه المشغل النشط أو بدّل لاستخدام موجه آخر.',
+    statusHint: 'شغّل الخطوة أو سجّل حالة المراجعة أو أعد فتح العمل.',
+    lastUpdated: 'آخر تحديث',
+    notStarted: 'لم تبدأ',
+    saved: 'محفوظة',
+    memoryHint: 'ملاحظات وقرارات ومشكلات واتفاقيات مرتبطة بهذه العقدة.',
+    loadingMarkdown: 'جار تحميل Markdown...',
+  },
+};
+
 interface StepDetailsProps {
   projectId: string;
   step: Step;
@@ -82,11 +167,12 @@ export function StepDetails({
   t,
 }: StepDetailsProps) {
   const isRtl = locale === 'ar';
+  const text = panelCopy[locale];
 
   return (
     <div
       className={cn(
-        'absolute top-0 z-10 flex h-full w-[28rem] max-w-[calc(100vw-1.5rem)] flex-col border-border bg-background/95 shadow-[var(--pg-shadow-panel)] backdrop-blur-xl',
+        'absolute top-0 z-10 flex h-full w-[29rem] max-w-[calc(100vw-1.5rem)] flex-col border-[var(--pg-border-soft)] bg-[linear-gradient(180deg,oklch(0.2_0.035_265_/_0.94),oklch(0.13_0.03_265_/_0.9))] shadow-[0_24px_90px_oklch(0.04_0.02_265_/_0.46),inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-2xl',
         isRtl ? 'left-0 border-r' : 'right-0 border-l',
       )}
       dir={isRtl ? 'rtl' : 'ltr'}
@@ -94,7 +180,7 @@ export function StepDetails({
       <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/70 px-4 py-4">
         <div className="min-w-0">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Execution node
+            {text.node}
           </div>
           <div className="line-clamp-2 text-base font-semibold leading-snug">{step.title}</div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -108,7 +194,8 @@ export function StepDetails({
         <button
           onClick={onClose}
           className="inline-flex size-7 shrink-0 items-center justify-center rounded hover:bg-muted"
-          aria-label="Close step details"
+          aria-label={text.close}
+          title={text.close}
         >
           <X className="h-4 w-4" />
         </button>
@@ -117,19 +204,19 @@ export function StepDetails({
       <Tabs defaultValue="overview" className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 border-b border-border/70 px-3 py-2">
           <TabsList className="grid w-full grid-cols-4 bg-muted/60">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="prompt">Prompt</TabsTrigger>
-            <TabsTrigger value="status">Status</TabsTrigger>
-            <TabsTrigger value="markdown">Markdown</TabsTrigger>
+            <TabsTrigger value="overview">{text.overview}</TabsTrigger>
+            <TabsTrigger value="prompt">{text.prompt}</TabsTrigger>
+            <TabsTrigger value="status">{text.status}</TabsTrigger>
+            <TabsTrigger value="markdown">{text.markdown}</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="overview" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <OverviewTab step={step} executor={executor} t={t} />
+          <OverviewTab step={step} executor={executor} locale={locale} t={t} />
         </TabsContent>
 
         <TabsContent value="prompt" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <PromptsTab step={step} executor={executor} t={t} />
+          <PromptsTab step={step} executor={executor} locale={locale} t={t} />
         </TabsContent>
 
         <TabsContent value="status" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -142,12 +229,13 @@ export function StepDetails({
             memories={memories}
             onAddMemory={onAddMemory}
             addingMemory={addingMemory}
+            locale={locale}
             t={t}
           />
         </TabsContent>
 
         <TabsContent value="markdown" className="m-0 min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <MarkdownTab projectId={projectId} step={step} />
+          <MarkdownTab projectId={projectId} step={step} locale={locale} />
         </TabsContent>
       </Tabs>
     </div>
@@ -157,12 +245,15 @@ export function StepDetails({
 function OverviewTab({
   step,
   executor,
+  locale,
   t,
 }: {
   step: Step;
   executor: ExecutorTool;
+  locale: 'en' | 'ar';
   t: StepDetailsProps['t'];
 }) {
+  const text = panelCopy[locale];
   const required = step.recommendedLibraries.filter((lib) => lib.required);
   const optional = step.recommendedLibraries.filter((lib) => !lib.required);
   const availablePrompts = PROMPT_TABS.filter(({ key }) => step.prompts[key]);
@@ -171,46 +262,46 @@ function OverviewTab({
     <div className="flex flex-col gap-3 text-sm">
       <DetailSection
         icon={<BookOpen className="size-4" />}
-        title="Description"
-        description="What this node must accomplish before execution can move on."
+        title={text.description}
+        description={text.descriptionHint}
       >
         <p className="leading-6 text-foreground/90">{step.goal}</p>
       </DetailSection>
 
       <DetailSection
         icon={<Sparkles className="size-4" />}
-        title="Skills"
-        description="Execution capability, dependencies, and affected nodes."
+        title={text.skills}
+        description={text.skillsHint}
       >
         <div className="grid grid-cols-2 gap-2">
-          <MetricPill label="Step type" value={step.type} />
-          <MetricPill label="Executor" value={executorLabel(executor)} />
+          <MetricPill label={text.stepType} value={step.type} />
+          <MetricPill label={text.executor} value={executorLabel(executor)} />
         </div>
         <div className="mt-3 flex flex-col gap-2">
-          <ChipRow label="Depends on" items={step.dependsOn} empty="None" />
-          <ChipRow label="Affects" items={step.affects} empty="No downstream nodes" />
+          <ChipRow label={text.dependsOn} items={step.dependsOn} empty={text.none} />
+          <ChipRow label={text.affects} items={step.affects} empty={text.noDownstream} />
         </div>
       </DetailSection>
 
       <DetailSection
         icon={<Library className="size-4" />}
         title={t('project.stepPanel.libraries')}
-        description="Packages or APIs this step expects the executor to consider."
+        description={text.libraryHint}
       >
         {step.recommendedLibraries.length > 0 ? (
           <div className="flex flex-col gap-2">
-            {required.length > 0 && <LibraryGroup title="Required" libraries={required} />}
-            {optional.length > 0 && <LibraryGroup title="Optional" libraries={optional} />}
+            {required.length > 0 && <LibraryGroup title={text.required} libraries={required} />}
+            {optional.length > 0 && <LibraryGroup title={text.optional} libraries={optional} />}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">No libraries specified.</p>
+          <p className="text-xs text-muted-foreground">{text.noLibraries}</p>
         )}
       </DetailSection>
 
       <DetailSection
         icon={<Boxes className="size-4" />}
-        title="Tools and files"
-        description="Prompt targets, context files, and guarded files for this node."
+        title={text.tools}
+        description={text.toolsHint}
       >
         <div className="mb-3 flex flex-wrap gap-1.5">
           {availablePrompts.map(({ key, label }) => (
@@ -223,12 +314,12 @@ function OverviewTab({
             </Badge>
           ))}
         </div>
-        <ChipRow label="Context" items={step.contextFiles} empty="No context files" />
-        <ChipRow label="Protected" items={step.protectedFiles} empty="No protected files" tone="danger" />
+        <ChipRow label={text.context} items={step.contextFiles} empty={text.noContext} />
+        <ChipRow label={text.protected} items={step.protectedFiles} empty={text.noProtected} tone="danger" />
         <div className="mt-3 grid gap-2 text-xs">
-          <FileReference icon={<FileText className="size-3.5" />} label="Step markdown" value={step.mdFile} />
+          <FileReference icon={<FileText className="size-3.5" />} label={text.stepMarkdown} value={step.mdFile} />
           {step.reportFile && (
-            <FileReference icon={<ClipboardList className="size-3.5" />} label="Report" value={step.reportFile} />
+            <FileReference icon={<ClipboardList className="size-3.5" />} label={text.report} value={step.reportFile} />
           )}
         </div>
       </DetailSection>
@@ -236,7 +327,7 @@ function OverviewTab({
       <DetailSection
         icon={<ListChecks className="size-4" />}
         title={t('project.stepPanel.criteria')}
-        description="Checklist used to decide whether the executor output is complete."
+        description={text.criteriaHint}
       >
         {step.successCriteria.length > 0 ? (
           <ul className="space-y-2">
@@ -248,7 +339,7 @@ function OverviewTab({
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted-foreground">No success criteria defined.</p>
+          <p className="text-xs text-muted-foreground">{text.noCriteria}</p>
         )}
       </DetailSection>
 
@@ -256,7 +347,7 @@ function OverviewTab({
         <DetailSection
           icon={<ShieldCheck className="size-4" />}
           title={t('project.stepPanel.restrictions')}
-          description="Notes and guardrails that must stay true while executing."
+          description={text.restrictionsHint}
         >
           <ul className="space-y-1">
             {step.restrictions.map((restriction) => (
@@ -271,7 +362,7 @@ function OverviewTab({
   );
 }
 
-function MarkdownTab({ projectId, step }: { projectId: string; step: Step }) {
+function MarkdownTab({ projectId, step, locale }: { projectId: string; step: Step; locale: 'en' | 'ar' }) {
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -288,7 +379,7 @@ function MarkdownTab({ projectId, step }: { projectId: string; step: Step }) {
   }, [projectId, step.id]);
 
   if (error) return <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>;
-  if (content === null) return <p className="text-sm text-muted-foreground">Loading markdown...</p>;
+  if (content === null) return <p className="text-sm text-muted-foreground">{panelCopy[locale].loadingMarkdown}</p>;
 
   return (
     <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-pre:overflow-x-auto prose-pre:rounded-lg prose-pre:border prose-pre:border-border prose-pre:bg-muted/70">
@@ -300,12 +391,15 @@ function MarkdownTab({ projectId, step }: { projectId: string; step: Step }) {
 function PromptsTab({
   step,
   executor,
+  locale,
   t,
 }: {
   step: Step;
   executor: ExecutorTool;
+  locale: 'en' | 'ar';
   t: StepDetailsProps['t'];
 }) {
+  const text = panelCopy[locale];
   const defaultTab = executorPromptKey(executor);
   const tabs = PROMPT_TABS.filter(({ key }) => step.prompts[key]);
 
@@ -314,10 +408,10 @@ function PromptsTab({
       <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
         <div className="mb-1 flex items-center gap-2 text-xs font-medium">
           <Network className="size-3.5 text-[var(--pg-accent-cyan)]" />
-          Prompt targets
+          {text.promptTargets}
         </div>
         <p className="text-xs leading-5 text-muted-foreground">
-          Copy the active executor prompt or switch tabs to use another generated prompt.
+          {text.promptHint}
         </p>
       </div>
       <TabsList className="grid grid-cols-2 bg-muted/60">
@@ -380,6 +474,7 @@ function StatusTab({
   memories,
   onAddMemory,
   addingMemory,
+  locale,
   t,
 }: {
   step: Step;
@@ -390,8 +485,10 @@ function StatusTab({
   memories: MemoryEntry[];
   onAddMemory: (category: MemoryEntry['category'], text: string) => Promise<void>;
   addingMemory: boolean;
+  locale: 'en' | 'ar';
   t: StepDetailsProps['t'];
 }) {
+  const text = panelCopy[locale];
   const [memFormOpen, setMemFormOpen] = useState(false);
   const [memCategory, setMemCategory] = useState<MemoryEntry['category']>('decision');
   const [memText, setMemText] = useState('');
@@ -401,14 +498,14 @@ function StatusTab({
       <DetailSection
         icon={<ClipboardList className="size-4" />}
         title={t('project.stepPanel.statusLabel')}
-        description="Run the step, record review state, or reopen completed work."
+        description={text.statusHint}
       >
         <div className="flex flex-wrap items-center gap-2">
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE[step.status]}`}>
             {t(`project.stepPanel.status.${step.status}`)}
           </span>
           <span className="text-[11px] text-muted-foreground">
-            Last updated: {step.completedAt ?? step.startedAt ?? 'Not started'}
+            {text.lastUpdated}: {step.completedAt ?? step.startedAt ?? text.notStarted}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -446,10 +543,10 @@ function StatusTab({
       <DetailSection
         icon={<FileText className="size-4" />}
         title={t('project.stepPanel.memory.title')}
-        description="Notes, decisions, issues, and conventions linked to this node."
+        description={text.memoryHint}
       >
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">{memories.length} saved</span>
+          <span className="text-xs text-muted-foreground">{memories.length} {text.saved}</span>
           {!memFormOpen && (
             <button
               onClick={() => setMemFormOpen(true)}
@@ -539,7 +636,7 @@ function DetailSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border/70 bg-[var(--pg-surface-glass)] p-3 shadow-sm">
+    <section className="rounded-xl border border-[var(--pg-border-soft)] bg-background/24 p-3 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.04)]">
       <div className="mb-3 flex gap-2.5">
         <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
           {icon}

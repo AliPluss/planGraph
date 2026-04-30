@@ -1,11 +1,24 @@
 'use client';
 
-import { use, useEffect, useState, useCallback, useRef } from 'react';
+import { use, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n/i18n';
-import { ArrowLeft, X, Copy, Check, Play, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  BarChart3,
+  BookOpen,
+  Check,
+  CircleDot,
+  Copy,
+  Database,
+  GitBranch,
+  History,
+  Loader2,
+  Play,
+  X,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { GraphCanvas } from '@/components/plangraph/graph/GraphCanvas';
 import { StepDetails } from '@/components/plangraph/step/StepDetails';
@@ -28,11 +41,48 @@ interface RunResult {
 
 type RunMode = 'open-terminal' | 'subprocess';
 
+const graphCopy = {
+  en: {
+    backProjects: 'Back to projects',
+    graph: 'Graph',
+    dashboard: 'Dashboard',
+    memory: 'Memory',
+    audit: 'Audit',
+    nodes: 'nodes',
+    template: 'Template',
+    executor: 'Executor',
+    runMode: 'Run mode',
+    openTerminal: 'Open Terminal',
+    subprocess: 'Subprocess',
+    subprocessConfirm: 'Subprocess mode runs Claude Code non-interactively and may trigger third-party tool detection in some configurations. Continue?',
+    progress: 'Progress',
+    claudeMissing: 'Claude Code not detected. Install: https://docs.claude.com/claude-code',
+  },
+  ar: {
+    backProjects: 'العودة للمشاريع',
+    graph: 'المخطط',
+    dashboard: 'لوحة المشروع',
+    memory: 'الذاكرة',
+    audit: 'التدقيق',
+    nodes: 'عقد',
+    template: 'القالب',
+    executor: 'المشغل',
+    runMode: 'نمط التشغيل',
+    openTerminal: 'فتح الطرفية',
+    subprocess: 'تشغيل فرعي',
+    subprocessConfirm: 'نمط التشغيل الفرعي يشغل Claude Code دون تفاعل وقد يطلق تنبيهات أدوات خارجية في بعض الإعدادات. هل تريد المتابعة؟',
+    progress: 'التقدم',
+    claudeMissing: 'لم يتم العثور على Claude Code. ثبته من: https://docs.claude.com/claude-code',
+  },
+};
+
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const locale = i18n.language as 'en' | 'ar';
+  const locale = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const isArabic = locale === 'ar';
+  const text = graphCopy[locale];
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -318,90 +368,107 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     : 0;
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100dvh - 3.5rem)' }}>
-      {/* Project header bar */}
-      <div className="h-12 border-b px-4 flex items-center gap-3 shrink-0 bg-background">
+    <div
+      dir={isArabic ? 'rtl' : 'ltr'}
+      className="flex flex-col bg-[radial-gradient(circle_at_28%_0%,oklch(0.58_0.18_255_/_0.16),transparent_34%),radial-gradient(circle_at_78%_8%,oklch(0.56_0.22_292_/_0.16),transparent_32%),linear-gradient(180deg,oklch(0.13_0.03_265),oklch(0.1_0.025_265))]"
+      style={{ height: 'calc(100dvh - 3.5rem)' }}
+    >
+      <div className="shrink-0 border-b border-[var(--pg-border-soft)] bg-background/68 px-3 py-3 shadow-[0_18px_60px_oklch(0.04_0.02_265_/_0.24)] backdrop-blur-2xl lg:px-5">
+        <div className="flex min-h-14 flex-wrap items-center gap-3">
         <button
-          onClick={() => router.push('/')}
-          className="inline-flex items-center justify-center size-7 rounded-md hover:bg-muted transition-colors"
-          aria-label={t('project.backHome')}
+          onClick={() => router.push('/project')}
+          className="inline-flex size-10 items-center justify-center rounded-xl border border-[var(--pg-border-soft)] bg-background/35 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label={text.backProjects}
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <span className="font-semibold text-sm truncate">{project.meta.name}</span>
-        <Badge variant="secondary" className="text-[11px] shrink-0">
-          {t('project.stepCount', { count: project.steps.length })}
-        </Badge>
-        <Badge variant="outline" className="text-[11px] shrink-0 capitalize">
-          {project.meta.templateId.replace(/-/g, ' ')}
-        </Badge>
-        <Link
-          href={`/project/${id}/dashboard`}
-          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          Dashboard
-        </Link>
-        <Link
-          href={`/project/${id}/memory`}
-          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          Memory
-        </Link>
-        <Link
-          href={`/project/${id}/audit`}
-          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          Audit
-        </Link>
-        <ExecutorSelector
-          projectId={id}
-          value={project.meta.selectedExecutor}
-          activeStepId={selectedStep?.id}
-          onChange={(tool: ExecutorTool) => {
-            setProject({
-              ...project,
-              meta: { ...project.meta, selectedExecutor: tool },
-            });
-            if (tool !== 'claude-code') setRunMode('open-terminal');
-          }}
-        />
+        <div className="min-w-0 shrink grow basis-64">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--pg-accent-purple)]/16 text-[var(--pg-accent-purple)] shadow-[0_0_24px_oklch(0.56_0.22_292_/_0.24)]">
+              <GitBranch className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-semibold sm:text-base">{project.meta.name}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-md border border-[var(--pg-border-soft)] bg-background/28 px-2 py-0.5">
+                  <CircleDot className="size-3 text-[var(--pg-accent-green)]" />
+                  {project.steps.length} {text.nodes}
+                </span>
+                <span className="rounded-md border border-[var(--pg-border-soft)] bg-background/28 px-2 py-0.5 capitalize">
+                  {text.template}: {project.meta.templateId.replace(/-/g, ' ')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <nav className="order-last flex w-full items-center gap-1 rounded-2xl border border-[var(--pg-border-soft)] bg-background/32 p-1 text-xs font-semibold sm:order-none sm:w-auto">
+          <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--pg-accent-purple)]/18 px-3 text-white shadow-[inset_0_-1px_0_oklch(0.56_0.22_292_/_0.32)]">
+            <GitBranch className="size-4" />
+            {text.graph}
+          </span>
+          <HeaderLink href={`/project/${id}/dashboard`} icon={<BarChart3 className="size-4" />} label={text.dashboard} />
+          <HeaderLink href={`/project/${id}/memory`} icon={<BookOpen className="size-4" />} label={text.memory} />
+          <HeaderLink href={`/project/${id}/audit`} icon={<History className="size-4" />} label={text.audit} />
+        </nav>
+        <div className="flex items-center gap-2 rounded-2xl border border-[var(--pg-border-soft)] bg-background/32 px-3 py-2">
+          <span className="hidden text-[11px] font-semibold text-muted-foreground xl:inline">{text.executor}</span>
+          <ExecutorSelector
+            projectId={id}
+            value={project.meta.selectedExecutor}
+            activeStepId={selectedStep?.id}
+            onChange={(tool: ExecutorTool) => {
+              setProject({
+                ...project,
+                meta: { ...project.meta, selectedExecutor: tool },
+              });
+              if (tool !== 'claude-code') setRunMode('open-terminal');
+            }}
+          />
+        </div>
         {project.meta.selectedExecutor === 'claude-code' && (
-          <div className="flex rounded-md border border-border p-0.5 text-[11px]">
+          <div className="flex rounded-2xl border border-[var(--pg-border-soft)] bg-background/32 p-1 text-[11px]">
             <button
               onClick={() => setRunMode('open-terminal')}
-              className={`rounded px-2 py-0.5 ${runMode === 'open-terminal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              className={`rounded-xl px-2.5 py-1.5 font-semibold ${runMode === 'open-terminal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
             >
-              Open Terminal
+              {text.openTerminal}
             </button>
             <button
               onClick={() => {
-                if (window.confirm('Subprocess mode runs Claude Code non-interactively and may trigger third-party tool detection in some configurations. Continue?')) {
+                if (window.confirm(text.subprocessConfirm)) {
                   setRunMode('subprocess');
                 }
               }}
-              className={`rounded px-2 py-0.5 ${runMode === 'subprocess' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+              className={`rounded-xl px-2.5 py-1.5 font-semibold ${runMode === 'subprocess' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
             >
-              Subprocess
+              {text.subprocess}
             </button>
           </div>
         )}
-        {/* Progress bar */}
-        <div className="flex-1 flex items-center gap-2 min-w-0 ms-auto">
-          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden max-w-32">
+        <div className="ms-auto flex min-w-40 items-center gap-2 rounded-2xl border border-[var(--pg-border-soft)] bg-background/32 px-3 py-2">
+          <Database className="size-4 text-[var(--pg-accent-cyan)]" />
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold text-muted-foreground">
+              <span>{text.progress}</span>
+              <span>{pct}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-primary transition-all"
+              className="h-full rounded-full bg-[linear-gradient(90deg,var(--pg-accent-purple),var(--pg-accent-blue),var(--pg-accent-cyan))] transition-all"
               style={{ width: `${pct}%` }}
             />
+            </div>
           </div>
-          <span className="text-[11px] text-muted-foreground shrink-0">
+          <span className="hidden text-[11px] text-muted-foreground xl:inline">
             {t('project.progress', { done: doneCount, total: project.steps.length })}
           </span>
+        </div>
         </div>
       </div>
 
       {claudeMissing && (
-        <div className="border-b bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          Claude Code not detected. Install: https://docs.claude.com/claude-code
+        <div className="border-b border-[var(--pg-border-soft)] bg-[var(--pg-accent-amber)]/12 px-4 py-2 text-xs text-[var(--pg-accent-amber)]">
+          {text.claudeMissing}
         </div>
       )}
 
@@ -495,6 +562,19 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         />
       )}
     </div>
+  );
+}
+
+function HeaderLink({ href, icon, label }: { href: string; icon: ReactNode; label: string }) {
+  return (
+    <Link
+      href={href}
+      prefetch={false}
+      className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-muted-foreground transition hover:bg-muted/45 hover:text-foreground"
+    >
+      {icon}
+      <span className="hidden sm:inline">{label}</span>
+    </Link>
   );
 }
 

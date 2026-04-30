@@ -285,3 +285,14 @@
   - Kept filtering, sorting, selection, project opening, template navigation, RTL Arabic, and English mode tied to existing data/routes.
 - **Verification:** `npm.cmd run test` and `npm.cmd run build` passed. `npm.cmd run dev` served `/project` with HTTP 200.
 - **Notes:** Initial sandboxed test/build attempts were blocked by Windows `spawn EPERM`; approved reruns passed. Browser screenshot tooling is not installed, so final visual comparison remains a manual review step.
+
+## MVP 2 Session 6 — Graph Workspace V2
+- **Completed:** 2026-04-30T18:47:15+02:00
+- **Files added/modified:** 7
+- **Key outcomes:**
+  - Polished the real `/project/[id]` graph workspace against `04-graph-workspace-v1.png`, `09-graph-workspace-v2.png`, `06-ai-model-graph-map.png`, and `07-node-system.png`.
+  - Reworked the project graph header into a compact glass toolbar with real navigation to graph/dashboard/memory/audit, real executor selection, real run-mode controls, and real progress data.
+  - Upgraded React Flow visuals with a dark dotted canvas, working node rail, existing zoom/minimap controls, larger vertical-layout node cards, semantic colors/icons, status pills, notes affordance, and polished root/delivery nodes.
+  - Localized and visually polished the existing step detail panel while preserving markdown loading, prompt copying, status updates, run actions, executor prompts, and memory-note behavior.
+- **Verification:** `npm.cmd run test` and `npm.cmd run build` passed. `npm.cmd run dev` served a real `/project/0ae8790f-db45-4492-a326-1e16796d5bd5` route with HTTP 200 and loaded a real step markdown endpoint with HTTP 200.
+- **Notes:** Initial sandboxed test/build attempts were blocked by Windows `spawn EPERM`; approved reruns passed. Browser automation is not installed, so click-level visual QA remains a manual browser review step.
