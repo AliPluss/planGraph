@@ -274,3 +274,14 @@
   - Preserved the existing profile/project/audit fetch flow and existing route links.
 - **Verification:** `npm.cmd run test` and `npm.cmd run build` passed.
 - **Notes:** The first sandboxed `npm.cmd run test` attempt was blocked by Windows `spawn EPERM`; the approved rerun passed.
+
+## MVP 2 Session 5 — Projects and Templates V2
+- **Completed:** 2026-04-30T18:32:33+02:00
+- **Files added/modified:** 2
+- **Key outcomes:**
+  - Polished `/project` against `02-projects-templates-v1.png` and `10-projects-templates-v2.png`.
+  - Added screenshot-style project tabs, working status chips, denser project cards with real graph previews, real project descriptions, stack chips, and a working new-project tile.
+  - Expanded the selected-project panel with a real graph preview, current-step and blocked-item summaries, stack metadata, related template links, recent activity, and working project/memory/audit actions.
+  - Kept filtering, sorting, selection, project opening, template navigation, RTL Arabic, and English mode tied to existing data/routes.
+- **Verification:** `npm.cmd run test` and `npm.cmd run build` passed. `npm.cmd run dev` served `/project` with HTTP 200.
+- **Notes:** Initial sandboxed test/build attempts were blocked by Windows `spawn EPERM`; approved reruns passed. Browser screenshot tooling is not installed, so final visual comparison remains a manual review step.

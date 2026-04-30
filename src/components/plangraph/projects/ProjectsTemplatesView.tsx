@@ -9,8 +9,10 @@ import {
   Boxes,
   ChevronDown,
   CircleDot,
+  Clock3,
   Edit3,
   Filter,
+  GitBranch,
   Grid2X2,
   Layers3,
   List,
@@ -60,6 +62,8 @@ const copy = {
     projectSwitch: 'AI research workspace',
     newProject: 'New Project',
     allProjects: 'All Projects',
+    templatesTab: 'Templates',
+    archiveTab: 'Archive',
     search: 'Search projects...',
     apply: 'Apply',
     all: 'All',
@@ -72,9 +76,14 @@ const copy = {
     steps: 'Steps',
     collaborators: 'Team',
     description: 'Description',
+    currentStep: 'Current step',
+    stack: 'Stack',
+    blocked: 'Blocked',
     related: 'Featured templates',
     activity: 'Latest activity',
     open: 'Open Project',
+    openMemory: 'Memory',
+    openAudit: 'Audit',
     featured: 'Featured Templates',
     showAll: 'View all templates',
     useTemplate: 'Use template',
@@ -91,6 +100,8 @@ const copy = {
     projectSwitch: 'مساحة بحث الذكاء الاصطناعي',
     newProject: 'مشروع جديد',
     allProjects: 'كل المشاريع',
+    templatesTab: 'القوالب',
+    archiveTab: 'الأرشيف',
     search: 'ابحث في المشاريع...',
     apply: 'تطبيق',
     all: 'الكل',
@@ -103,9 +114,14 @@ const copy = {
     steps: 'الخطوات',
     collaborators: 'الفريق',
     description: 'الوصف',
+    currentStep: 'الخطوة الحالية',
+    stack: 'التقنيات',
+    blocked: 'المعطلة',
     related: 'قوالب مميزة',
     activity: 'النشاط الأخير',
     open: 'فتح المشروع',
+    openMemory: 'الذاكرة',
+    openAudit: 'التدقيق',
     featured: 'قوالب مميزة',
     showAll: 'عرض جميع القوالب',
     useTemplate: 'استخدام القالب',
@@ -154,13 +170,13 @@ export default function ProjectsTemplatesView({
   return (
     <main
       dir={isArabic ? 'rtl' : 'ltr'}
-      className="min-h-screen bg-[radial-gradient(circle_at_78%_0%,oklch(0.56_0.22_292_/_0.18),transparent_34%),radial-gradient(circle_at_30%_12%,oklch(0.58_0.18_255_/_0.16),transparent_32%),linear-gradient(180deg,oklch(0.13_0.03_265),oklch(0.1_0.025_265))] px-4 py-5 text-foreground sm:px-6 lg:px-8"
+      className="min-h-screen bg-[radial-gradient(circle_at_78%_0%,oklch(0.56_0.22_292_/_0.18),transparent_34%),radial-gradient(circle_at_30%_12%,oklch(0.58_0.18_255_/_0.16),transparent_32%),linear-gradient(180deg,oklch(0.13_0.03_265),oklch(0.1_0.025_265))] px-4 py-4 text-foreground sm:px-5 lg:px-6"
     >
-      <div className="mx-auto grid w-full max-w-[1720px] gap-4 xl:grid-cols-[minmax(0,1fr)_25rem] 2xl:grid-cols-[minmax(0,1fr)_29rem]">
+      <div className="mx-auto grid w-full max-w-[1760px] gap-4 xl:grid-cols-[minmax(0,1fr)_25rem] 2xl:grid-cols-[minmax(0,1fr)_30rem]">
         <section className="min-w-0 space-y-4">
           <TopBar text={text} isArabic={isArabic} selectedProject={selectedProject} locale={locale} />
 
-          <section className="rounded-2xl border border-[var(--pg-border-soft)] bg-[linear-gradient(180deg,oklch(0.21_0.035_265_/_0.8),oklch(0.15_0.03_265_/_0.62))] p-4 shadow-[0_24px_80px_oklch(0.04_0.02_265_/_0.38),inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-2xl sm:p-5">
+          <section className="rounded-2xl border border-[var(--pg-border-soft)] bg-[linear-gradient(180deg,oklch(0.21_0.035_265_/_0.8),oklch(0.15_0.03_265_/_0.62))] p-4 shadow-[0_24px_80px_oklch(0.04_0.02_265_/_0.38),inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-2xl">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex items-center gap-3">
@@ -183,9 +199,17 @@ export default function ProjectsTemplatesView({
 
             <div className="mt-5 border-b border-[var(--pg-border-soft)]">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
-                <span className="border-b-2 border-[var(--pg-accent-purple)] px-1 pb-3 text-sm font-semibold text-foreground">
-                  {text.allProjects}
-                </span>
+                <div className="flex items-center gap-5 text-sm font-semibold">
+                  <span className="border-b-2 border-[var(--pg-accent-purple)] px-1 pb-3 text-foreground">
+                    {text.allProjects}
+                  </span>
+                  <a href="#templates" className="px-1 pb-3 text-muted-foreground transition hover:text-foreground">
+                    {text.templatesTab}
+                  </a>
+                  <span className="cursor-not-allowed px-1 pb-3 text-muted-foreground/45" aria-disabled="true">
+                    {text.archiveTab}
+                  </span>
+                </div>
                 <span className="text-xs font-semibold text-muted-foreground">
                   {filteredProjects.length} / {projects.length}
                 </span>
@@ -241,6 +265,24 @@ export default function ProjectsTemplatesView({
                 </button>
               </div>
             </Form>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(statusLabels[locale]).map(([value, label]) => (
+                <Link
+                  key={value}
+                  href={statusFilterHref(value, { query, sortBy })}
+                  scroll={false}
+                  prefetch={false}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                    statusFilter === value
+                      ? 'border-[var(--pg-accent-purple)] bg-[var(--pg-accent-purple)]/18 text-white shadow-[0_0_18px_oklch(0.56_0.22_292_/_0.2)]'
+                      : 'border-[var(--pg-border-soft)] bg-background/25 text-muted-foreground hover:border-[var(--pg-border-strong)] hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
 
             <ProjectGrid
               projects={filteredProjects}
@@ -353,7 +395,7 @@ function ProjectGrid({
   }
 
   return (
-    <div className={viewMode === 'grid' ? 'mt-5 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3' : 'mt-5 grid gap-3'}>
+      <div className={viewMode === 'grid' ? 'mt-5 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3' : 'mt-5 grid gap-3'}>
       {projects.map((project) => (
         <ProjectCard
           key={project.id}
@@ -364,6 +406,7 @@ function ProjectGrid({
           viewMode={viewMode}
         />
       ))}
+      <NewProjectTile locale={locale} />
     </div>
   );
 }
@@ -410,6 +453,8 @@ function ProjectCard({
 
         <GraphPreview project={project} compact={viewMode === 'list'} />
 
+        <p className="mt-3 line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground">{project.idea}</p>
+
         <div className="mt-3">
           <div className="mb-2 flex items-center justify-between text-xs">
             <span className="text-muted-foreground">{project.progress.done} / {project.progress.total}</span>
@@ -428,6 +473,16 @@ function ProjectCard({
           <MetaBlock label={locale === 'ar' ? 'آخر تحديث' : 'Updated'} value={relativeTime(project.updatedAt, locale)} />
           <MetaBlock label={locale === 'ar' ? 'الفريق' : 'Team'} value={`+${Math.max(1, project.stackPreview.length)}`} />
         </div>
+
+        {project.stackPreview.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {project.stackPreview.map((stack) => (
+              <span key={stack} className="rounded-md border border-[var(--pg-border-soft)] bg-background/24 px-2 py-1 text-[0.65rem] font-medium text-muted-foreground">
+                {stack}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -438,7 +493,7 @@ function GraphPreview({ project, compact = false }: { project: ProjectGalleryIte
 
   return (
     <div className={`pg-canvas-grid relative mt-4 overflow-hidden rounded-xl border border-[var(--pg-border-soft)] bg-background/30 ${compact ? 'h-24 md:mt-0 md:h-full md:min-h-28' : 'h-28'}`}>
-      <div className="absolute left-[12%] right-[12%] top-1/2 h-px bg-[var(--pg-border-strong)]" />
+      <div className="absolute left-[12%] right-[12%] top-1/2 h-px bg-[linear-gradient(90deg,transparent,var(--pg-border-strong),transparent)]" />
       {nodes.length === 0 ? (
         <div className="flex h-full items-center justify-center text-xs text-muted-foreground">Draft graph</div>
       ) : (
@@ -469,6 +524,24 @@ function GraphPreview({ project, compact = false }: { project: ProjectGalleryIte
   );
 }
 
+function NewProjectTile({ locale }: { locale: 'ar' | 'en' }) {
+  return (
+    <Link
+      href="/discovery"
+      prefetch={false}
+      className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--pg-border-strong)] bg-background/18 p-5 text-center transition hover:border-[var(--pg-accent-purple)] hover:bg-[var(--pg-accent-purple)]/8"
+    >
+      <span className="inline-flex size-14 items-center justify-center rounded-full border border-[var(--pg-accent-purple)]/45 bg-[var(--pg-accent-purple)]/12 text-[var(--pg-accent-purple)] shadow-[0_0_26px_oklch(0.56_0.22_292_/_0.24)]">
+        <Plus className="size-7" />
+      </span>
+      <span className="mt-4 text-base font-semibold">{locale === 'ar' ? 'مشروع جديد' : 'New Project'}</span>
+      <span className="mt-2 max-w-48 text-xs leading-5 text-muted-foreground">
+        {locale === 'ar' ? 'ابدأ خطة حقيقية من الاستكشاف.' : 'Start a real plan from discovery.'}
+      </span>
+    </Link>
+  );
+}
+
 function MetaBlock({ label, value }: { label: string; value: string }) {
   return (
     <div className="px-2">
@@ -488,7 +561,7 @@ function TemplatesRow({
   locale: 'ar' | 'en';
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--pg-border-soft)] bg-[linear-gradient(180deg,oklch(0.2_0.035_265_/_0.72),oklch(0.15_0.03_265_/_0.58))] p-4 shadow-[0_24px_80px_oklch(0.04_0.02_265_/_0.28)] backdrop-blur-2xl">
+    <section id="templates" className="scroll-mt-4 rounded-2xl border border-[var(--pg-border-soft)] bg-[linear-gradient(180deg,oklch(0.2_0.035_265_/_0.72),oklch(0.15_0.03_265_/_0.58))] p-4 shadow-[0_24px_80px_oklch(0.04_0.02_265_/_0.28)] backdrop-blur-2xl">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-semibold">
@@ -504,7 +577,7 @@ function TemplatesRow({
         {templates.map((template, index) => (
           <Link
             key={template.id}
-            href="/discovery"
+            href={`/discovery?template=${encodeURIComponent(template.id)}`}
             prefetch={false}
             className="rounded-xl border border-[var(--pg-border-soft)] bg-background/28 p-4 transition hover:border-[var(--pg-border-strong)] hover:bg-muted/35"
           >
@@ -548,6 +621,7 @@ function ProjectDetails({
 
   const related = templates.slice(0, 3);
   const recentSteps = project.project?.steps.slice(0, 3) ?? [];
+  const currentStep = project.currentStep ?? project.project?.steps.find((step) => step.status !== 'done') ?? null;
 
   return (
     <aside className="space-y-4 xl:sticky xl:top-5 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:pe-1">
@@ -562,6 +636,10 @@ function ProjectDetails({
         </div>
 
         <div className="mt-5 rounded-xl border border-[var(--pg-border-soft)] bg-background/26 p-4">
+          <GraphPreview project={project} />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-[var(--pg-border-soft)] bg-background/26 p-4">
           <div className="mb-3 flex items-center justify-between text-sm font-semibold">
             <span>{text.totalProgress}</span>
             <span>{project.progress.percent}%</span>
@@ -576,6 +654,20 @@ function ProjectDetails({
           </div>
         </div>
 
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <InfoCard
+            icon={<GitBranch className="size-4" />}
+            label={text.currentStep}
+            value={currentStep?.title ?? (locale === 'ar' ? 'لا توجد خطوة نشطة' : 'No active step')}
+          />
+          <InfoCard
+            icon={<Clock3 className="size-4" />}
+            label={text.blocked}
+            value={String(project.blockedCount)}
+            tone={project.blockedCount > 0 ? 'danger' : 'success'}
+          />
+        </div>
+
         <div className="mt-4 rounded-xl border border-[var(--pg-border-soft)] bg-background/22 p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-semibold">{text.description}</h3>
@@ -585,6 +677,19 @@ function ProjectDetails({
           </div>
           <p className="text-sm leading-6 text-muted-foreground">{project.idea}</p>
         </div>
+
+        {project.stackPreview.length > 0 && (
+          <div className="mt-4 rounded-xl border border-[var(--pg-border-soft)] bg-background/22 p-4">
+            <h3 className="text-sm font-semibold">{text.stack}</h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {project.stackPreview.map((stack) => (
+                <span key={stack} className="rounded-lg border border-[var(--pg-border-soft)] bg-background/28 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                  {stack}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 rounded-xl border border-[var(--pg-border-soft)] bg-background/22 p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -633,9 +738,44 @@ function ProjectDetails({
             <Play className="size-4" />
             {text.open}
           </Link>
+          <div className="grid grid-cols-2 gap-3">
+            <Link href={`/project/${project.id}/memory`} prefetch={false} className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--pg-border-soft)] bg-background/24 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">
+              {text.openMemory}
+            </Link>
+            <Link href={`/project/${project.id}/audit`} prefetch={false} className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--pg-border-soft)] bg-background/24 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">
+              {text.openAudit}
+            </Link>
+          </div>
         </div>
       </section>
     </aside>
+  );
+}
+
+function InfoCard({
+  icon,
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  tone?: 'neutral' | 'success' | 'danger';
+}) {
+  const toneClass =
+    tone === 'success'
+      ? 'text-[var(--pg-accent-green)] bg-[var(--pg-accent-green)]/12'
+      : tone === 'danger'
+        ? 'text-[var(--pg-accent-danger)] bg-[var(--pg-accent-danger)]/12'
+        : 'text-[var(--pg-accent-cyan)] bg-[var(--pg-accent-cyan)]/12';
+
+  return (
+    <div className="rounded-xl border border-[var(--pg-border-soft)] bg-background/22 p-3">
+      <div className={`inline-flex size-8 items-center justify-center rounded-lg ${toneClass}`}>{icon}</div>
+      <p className="mt-3 text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5">{value}</p>
+    </div>
   );
 }
 
@@ -673,6 +813,14 @@ function projectSelectionHref(
   if (filters.sortBy !== 'updated') params.set('sort', filters.sortBy);
   params.set('selected', selected);
   return `/project?${params.toString()}`;
+}
+
+function statusFilterHref(status: string, filters: { query: string; sortBy: string }) {
+  const params = new URLSearchParams();
+  if (filters.query.trim()) params.set('q', filters.query.trim());
+  if (status !== 'all') params.set('status', status);
+  if (filters.sortBy !== 'updated') params.set('sort', filters.sortBy);
+  return params.size ? `/project?${params.toString()}` : '/project';
 }
 
 function relativeTime(iso: string, locale: 'ar' | 'en') {
