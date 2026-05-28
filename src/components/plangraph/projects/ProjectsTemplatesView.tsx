@@ -23,6 +23,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import type { Project, ProjectMeta, Step } from '@/core/types';
+import { getStepRoleIcon, getStepVisual } from '@/components/plangraph/graph/StepNode';
 
 export type ProjectGalleryItem = ProjectMeta & {
   progress: { done: number; total: number; percent: number };
@@ -490,38 +491,95 @@ function ProjectCard({
 
 function GraphPreview({ project, compact = false }: { project: ProjectGalleryItem; compact?: boolean }) {
   const nodes = project.project?.steps.slice(0, 8) ?? [];
+  const rootColor = 'oklch(0.67 0.24 292)';
+  const deliveryColor = 'oklch(0.7 0.18 145)';
 
   return (
-    <div className={`pg-canvas-grid relative mt-4 overflow-hidden rounded-xl border border-[var(--pg-border-soft)] bg-background/30 ${compact ? 'h-24 md:mt-0 md:h-full md:min-h-28' : 'h-28'}`}>
-      <div className="absolute left-[12%] right-[12%] top-1/2 h-px bg-[linear-gradient(90deg,transparent,var(--pg-border-strong),transparent)]" />
+    <div className={`pg-canvas-grid relative mt-4 overflow-hidden rounded-xl border border-[var(--pg-border-soft)] bg-background/30 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.05)] ${compact ? 'h-28 md:mt-0 md:h-full md:min-h-32' : 'h-32'}`}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,oklch(0.56_0.22_292_/_0.18),transparent_34%),radial-gradient(circle_at_76%_72%,oklch(0.68_0.14_210_/_0.12),transparent_32%)]" />
+      <svg className="absolute inset-0 h-full w-full" aria-hidden>
+        <path d="M18 32 C58 32 58 64 98 64 S142 30 178 30 S222 72 264 72" fill="none" stroke="oklch(0.78 0.055 265 / 0.52)" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M98 64 C104 88 124 96 150 98 S206 96 230 112" fill="none" stroke="oklch(0.72 0.05 265 / 0.38)" strokeWidth="1.3" strokeDasharray="4 5" strokeLinecap="round" />
+      </svg>
       {nodes.length === 0 ? (
         <div className="flex h-full items-center justify-center text-xs text-muted-foreground">Draft graph</div>
       ) : (
-        nodes.map((step, index) => {
-          const row = index % 2 === 0 ? '38%' : '62%';
-          const left = `${Math.min(86, 8 + index * 11)}%`;
-          const colors = [
-            'var(--pg-accent-purple)',
-            'var(--pg-accent-blue)',
-            'var(--pg-accent-green)',
-            'var(--pg-accent-amber)',
-            'var(--pg-accent-cyan)',
-          ];
-          const color = colors[index % colors.length];
-          return (
-            <span
-              key={step.id}
-              title={step.title}
-              className="absolute flex h-7 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border text-[0.62rem] font-semibold shadow-[0_0_18px_currentColor]"
-              style={{ left, top: row, borderColor: color, color, background: 'oklch(0.13 0.03 265 / 0.82)' }}
-            >
-              {String(index + 1).padStart(2, '0')}
-            </span>
-          );
-        })
+        <>
+          <PreviewNode
+            title={project.name}
+            label="ROOT"
+            left="50%"
+            top="18%"
+            color={rootColor}
+            large
+          />
+          {nodes.slice(0, 6).map((step, index) => {
+            const positions = [
+              ['20%', '48%'],
+              ['50%', '47%'],
+              ['80%', '48%'],
+              ['28%', '74%'],
+              ['58%', '75%'],
+              ['84%', '74%'],
+            ];
+            const visual = getStepVisual(step);
+            const Icon = getStepRoleIcon(visual.role);
+            return (
+              <PreviewNode
+                key={step.id}
+                title={step.title}
+                label={`N-${String(index + 1).padStart(2, '0')}`}
+                left={positions[index][0]}
+                top={positions[index][1]}
+                color={visual.accent}
+                icon={<Icon className="size-3.5" />}
+              />
+            );
+          })}
+          <PreviewNode
+            title={localeLabel(project.progress.percent)}
+            label={`${project.progress.percent}%`}
+            left="50%"
+            top="92%"
+            color={deliveryColor}
+          />
+        </>
       )}
     </div>
   );
+}
+
+function PreviewNode({
+  title,
+  label,
+  left,
+  top,
+  color,
+  icon,
+  large = false,
+}: {
+  title: string;
+  label: string;
+  left: string;
+  top: string;
+  color: string;
+  icon?: ReactNode;
+  large?: boolean;
+}) {
+  return (
+    <span
+      title={title}
+      className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-1 rounded-lg border font-semibold shadow-[0_0_18px_currentColor] ${large ? 'h-8 min-w-20 px-2 text-[0.62rem]' : 'h-7 min-w-12 px-2 text-[0.6rem]'}`}
+      style={{ left, top, borderColor: color, color, background: 'oklch(0.12 0.032 265 / 0.88)' }}
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
+function localeLabel(percent: number) {
+  return percent === 100 ? 'Complete' : 'Delivery';
 }
 
 function NewProjectTile({ locale }: { locale: 'ar' | 'en' }) {

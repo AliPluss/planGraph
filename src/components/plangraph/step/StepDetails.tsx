@@ -172,12 +172,12 @@ export function StepDetails({
   return (
     <div
       className={cn(
-        'absolute top-0 z-10 flex h-full w-[29rem] max-w-[calc(100vw-1.5rem)] flex-col border-[var(--pg-border-soft)] bg-[linear-gradient(180deg,oklch(0.2_0.035_265_/_0.94),oklch(0.13_0.03_265_/_0.9))] shadow-[0_24px_90px_oklch(0.04_0.02_265_/_0.46),inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-2xl',
+        'absolute top-0 z-10 flex h-full w-[29rem] max-w-[calc(100vw-1.5rem)] flex-col border-white/10 bg-[linear-gradient(180deg,oklch(0.165_0.03_265_/_0.96),oklch(0.12_0.026_265_/_0.94))] shadow-[0_18px_56px_oklch(0.04_0.02_265_/_0.38),inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-2xl',
         isRtl ? 'left-0 border-r' : 'right-0 border-l',
       )}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/70 px-4 py-4">
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 px-4 py-4">
         <div className="min-w-0">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {text.node}
@@ -187,13 +187,13 @@ export function StepDetails({
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE[step.status]}`}>
               {t(`project.stepPanel.status.${step.status}`)}
             </span>
-            <Badge variant="outline" className="text-[11px] capitalize">{step.type}</Badge>
-            <Badge variant="secondary" className="text-[11px]">{executorLabel(executor)}</Badge>
+            <Badge variant="outline" className="border-white/12 bg-background/20 text-[11px] capitalize text-muted-foreground">{step.type}</Badge>
+            <Badge variant="secondary" className="bg-white/[0.07] text-[11px] text-foreground/80">{executorLabel(executor)}</Badge>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="inline-flex size-7 shrink-0 items-center justify-center rounded hover:bg-muted"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-background/20 text-muted-foreground transition hover:bg-muted hover:text-foreground"
           aria-label={text.close}
           title={text.close}
         >
@@ -202,12 +202,12 @@ export function StepDetails({
       </div>
 
       <Tabs defaultValue="overview" className="flex min-h-0 flex-1 flex-col">
-        <div className="shrink-0 border-b border-border/70 px-3 py-2">
-          <TabsList className="grid w-full grid-cols-4 bg-muted/60">
-            <TabsTrigger value="overview">{text.overview}</TabsTrigger>
-            <TabsTrigger value="prompt">{text.prompt}</TabsTrigger>
-            <TabsTrigger value="status">{text.status}</TabsTrigger>
-            <TabsTrigger value="markdown">{text.markdown}</TabsTrigger>
+        <div className="shrink-0 border-b border-white/10 px-3 py-2.5">
+          <TabsList className="grid h-10 w-full grid-cols-4 gap-1 rounded-xl border border-white/10 bg-background/28 p-1">
+            <TabsTrigger value="overview" className="rounded-lg px-2 text-[11px] font-semibold">{text.overview}</TabsTrigger>
+            <TabsTrigger value="prompt" className="rounded-lg px-2 text-[11px] font-semibold">{text.prompt}</TabsTrigger>
+            <TabsTrigger value="status" className="rounded-lg px-2 text-[11px] font-semibold">{text.status}</TabsTrigger>
+            <TabsTrigger value="markdown" className="rounded-lg px-2 text-[11px] font-semibold">{text.markdown}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -636,9 +636,9 @@ function DetailSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[var(--pg-border-soft)] bg-background/24 p-3 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.04)]">
+    <section className="rounded-xl border border-white/10 bg-background/22 p-3 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.035)]">
       <div className="mb-3 flex gap-2.5">
-        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/[0.045] text-[oklch(0.76_0.09_255)]">
           {icon}
         </div>
         <div className="min-w-0">
@@ -653,7 +653,7 @@ function DetailSection({
 
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border/70 bg-muted/25 px-2.5 py-2">
+    <div className="rounded-md border border-white/10 bg-muted/20 px-2.5 py-2">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-0.5 truncate text-xs font-medium capitalize">{value}</div>
     </div>

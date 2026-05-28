@@ -189,14 +189,24 @@
   }
 
   .pg-graph-canvas {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overscroll-behavior: contain;
     background:
-      radial-gradient(circle at 15% 20%, oklch(0.56 0.22 292 / 14%), transparent 32%),
-      radial-gradient(circle at 82% 12%, oklch(0.68 0.14 210 / 12%), transparent 28%),
-      var(--pg-surface-0);
+      linear-gradient(oklch(1 0 0 / 2.4%) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 2.4%) 1px, transparent 1px),
+      linear-gradient(oklch(1 0 0 / 1.2%) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 1.2%) 1px, transparent 1px),
+      radial-gradient(circle at 26% 10%, oklch(0.56 0.12 292 / 7%), transparent 30%),
+      radial-gradient(circle at 74% 14%, oklch(0.58 0.1 255 / 6%), transparent 28%),
+      linear-gradient(180deg, oklch(0.115 0.03 265), oklch(0.085 0.026 265) 62%, oklch(0.07 0.024 265));
+    background-size: 112px 112px, 112px 112px, 28px 28px, 28px 28px, auto, auto, auto;
   }
 
   .pg-graph-canvas .react-flow__pane {
     cursor: grab;
+    touch-action: none;
   }
 
   .pg-graph-canvas .react-flow__pane:active {
@@ -204,32 +214,54 @@
   }
 
   .pg-graph-canvas .react-flow__edge-path {
-    filter: drop-shadow(0 0 7px oklch(0.72 0.05 265 / 20%));
+    filter:
+      drop-shadow(0 0 3px oklch(0.72 0.03 265 / 10%));
+  }
+
+  .pg-graph-canvas .react-flow__edge .react-flow__edge-path {
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .pg-graph-canvas .react-flow__edge.selected .react-flow__edge-path {
-    stroke: var(--pg-accent-cyan);
-    stroke-width: 2.2;
+    stroke: oklch(0.72 0.09 205);
+    stroke-width: 2.4;
+  }
+
+  .pg-graph-canvas .react-flow__handle {
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  .pg-graph-canvas .react-flow__node {
+    cursor: grab;
+  }
+
+  .pg-graph-canvas .react-flow__node:active {
+    cursor: grabbing;
   }
 
   .pg-graph-canvas .react-flow__controls {
     overflow: hidden;
-    border: 1px solid var(--pg-border-soft);
-    border-radius: 0.75rem;
-    background: var(--pg-surface-glass);
-    box-shadow: var(--pg-shadow-panel);
+    border: 1px solid oklch(1 0 0 / 10%);
+    border-radius: 0.9rem;
+    background: oklch(0.11 0.026 265 / 86%);
+    box-shadow:
+      0 16px 44px oklch(0.03 0.02 265 / 34%),
+      inset 0 1px 0 oklch(1 0 0 / 6%);
     backdrop-filter: blur(18px);
   }
 
   .pg-graph-canvas .react-flow__controls-button {
     border: 0;
-    border-bottom: 1px solid var(--pg-border-soft);
-    background: transparent;
-    color: var(--foreground);
+    border-bottom: 1px solid oklch(1 0 0 / 8%);
+    background: oklch(0.11 0.026 265 / 84%) !important;
+    color: var(--foreground) !important;
+    width: 38px;
+    height: 38px;
   }
 
   .pg-graph-canvas .react-flow__controls-button:hover {
-    background: var(--muted);
+    background: oklch(0.68 0.13 292 / 12%) !important;
   }
 
   .pg-graph-canvas .react-flow__controls-button svg {
@@ -238,10 +270,21 @@
 
   .pg-graph-canvas .react-flow__minimap {
     overflow: hidden;
-    border: 1px solid var(--pg-border-soft);
-    border-radius: 0.75rem;
-    background: var(--pg-surface-glass);
-    box-shadow: var(--pg-shadow-panel);
+    border: 1px solid oklch(0.68 0.13 292 / 36%);
+    border-radius: 1.1rem;
+    background: oklch(0.095 0.026 265 / 90%);
+    box-shadow:
+      0 14px 38px oklch(0.03 0.02 265 / 30%),
+      0 0 12px oklch(0.5 0.1 292 / 8%),
+      inset 0 1px 0 oklch(1 0 0 / 6%);
     backdrop-filter: blur(18px);
+  }
+
+  .pg-graph-canvas .react-flow__minimap svg {
+    background: oklch(0.095 0.026 265) !important;
+  }
+
+  .pg-graph-canvas .react-flow__minimap-mask {
+    fill: oklch(0.08 0.022 265 / 58%) !important;
   }
 }
