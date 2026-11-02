@@ -2,8 +2,14 @@
 
 Local-first project planning with executable per-step Markdown plans.
 
-![PlanGraph dashboard screenshot placeholder](docs/screenshots/dashboard.png)
-![PlanGraph workspace screenshot placeholder](docs/screenshots/workspace.png)
+![Next.js](https://img.shields.io/badge/Next.js-111827?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React Flow](https://img.shields.io/badge/React_Flow-FF0072?style=for-the-badge&logoColor=white)
+![Status](https://img.shields.io/badge/status-under%20development-yellow?style=for-the-badge)
+
+> **Status:** Personal project, under active development. Core planning flow and graph workspace work locally; several features on the roadmap are not finished yet.
+
+![PlanGraph graph workspace with project steps as connected nodes](workspace/graph-session6-qa.png)
 
 ## Features
 
@@ -56,7 +62,7 @@ PlanGraph is localhost-only, uses guarded path resolution for managed workspace 
 - MCP server for richer local tool integrations.
 - More project templates and import heuristics.
 - Exportable progress reports.
-- Real screenshots and release assets.
+- More screenshots and release assets.
 
 ## Contributing
 
